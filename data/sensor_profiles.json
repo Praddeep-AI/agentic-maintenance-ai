@@ -1,0 +1,183 @@
+{
+  "sensor_profiles": {
+    "PUMP_vibration": {
+      "unit": "mm/s",
+      "normal_mean": 2.1,
+      "normal_std": 0.4,
+      "alert_threshold": 7.1,
+      "critical_threshold": 11.2,
+      "failure_modes": {
+        "bearing_failure": {
+          "progression_hours": 72,
+          "final_value": 14.5,
+          "pattern": "exponential"
+        }
+      }
+    },
+    "PUMP_bearing_temp": {
+      "unit": "°C",
+      "normal_mean": 72.0,
+      "normal_std": 3.5,
+      "alert_threshold": 90.0,
+      "critical_threshold": 110.0,
+      "failure_modes": {
+        "bearing_failure": {
+          "progression_hours": 48,
+          "final_value": 115.0,
+          "pattern": "linear"
+        }
+      }
+    },
+    "REACTOR_dp": {
+      "unit": "bar",
+      "normal_mean": 0.85,
+      "normal_std": 0.05,
+      "alert_threshold": 1.35,
+      "critical_threshold": 1.70,
+      "failure_modes": {
+        "catalyst_fouling": {
+          "progression_hours": 720,
+          "final_value": 2.10,
+          "pattern": "linear"
+        }
+      }
+    },
+    "HEAT_EXCHANGER_shell_pressure_drop": {
+      "unit": "bar",
+      "normal_mean": 0.42,
+      "normal_std": 0.03,
+      "alert_threshold": 0.65,
+      "critical_threshold": 0.85,
+      "failure_modes": {
+        "tube_fouling": {
+          "progression_hours": 480,
+          "final_value": 1.05,
+          "pattern": "linear"
+        }
+      }
+    },
+    "COMPRESSOR_discharge_temp": {
+      "unit": "°C",
+      "normal_mean": 105.0,
+      "normal_std": 4.0,
+      "alert_threshold": 130.0,
+      "critical_threshold": 155.0,
+      "failure_modes": {
+        "valve_failure": {
+          "progression_hours": 36,
+          "final_value": 165.0,
+          "pattern": "step_then_linear"
+        }
+      }
+    },
+    "COMPRESSOR_efficiency": {
+      "unit": "fraction",
+      "normal_mean": 0.82,
+      "normal_std": 0.01,
+      "alert_threshold": 0.74,
+      "critical_threshold": 0.68,
+      "failure_modes": {
+        "valve_failure": {
+          "progression_hours": 36,
+          "final_value": 0.62,
+          "pattern": "linear"
+        }
+      }
+    }
+  },
+  "anomaly_scenarios": {
+    "bearing_vibration_anomaly": {
+      "equipment_id": "P-101",
+      "failure_mode": "Bearing Failure",
+      "trigger_description": "NDE bearing vibration rising from 2.1 to 8.4 mm/s over 18 hours. Bearing temperature co-rising to 94°C.",
+      "sensor_snapshots": {
+        "T-18h": {"vibration_nde": 2.4, "vibration_de": 2.2, "bearing_temp_nde": 73.0, "bearing_temp_de": 72.5},
+        "T-12h": {"vibration_nde": 3.8, "vibration_de": 2.3, "bearing_temp_nde": 79.0, "bearing_temp_de": 73.0},
+        "T-6h":  {"vibration_nde": 5.9, "vibration_de": 2.4, "bearing_temp_nde": 86.0, "bearing_temp_de": 73.5},
+        "T-0h":  {"vibration_nde": 8.4, "vibration_de": 2.5, "bearing_temp_nde": 94.0, "bearing_temp_de": 74.0}
+      },
+      "predicted_failure_hours": 48,
+      "recommended_action": "Schedule planned bearing replacement within 24 hours. Run on standby pump P-101A during maintenance window.",
+      "parts_required": ["SKF-6315-C3", "SKF-6316-C3", "bearing_housing_seal_kit"],
+      "labor_hours_estimate": 8,
+      "downtime_hours_avoided": 64
+    },
+    "reactor_fouling": {
+      "equipment_id": "R-301",
+      "failure_mode": "Catalyst Fouling",
+      "trigger_description": "Differential pressure across bed rising 58% above baseline over 30 days. Outlet temperature cross indicates reduced conversion.",
+      "sensor_snapshots": {
+        "T-30d": {"dp_across_bed": 0.87, "inlet_temp": 320.0, "outlet_temp": 315.0, "bed_temp_1": 330.0},
+        "T-20d": {"dp_across_bed": 1.05, "inlet_temp": 320.0, "outlet_temp": 314.0, "bed_temp_1": 331.0},
+        "T-10d": {"dp_across_bed": 1.28, "inlet_temp": 320.0, "outlet_temp": 312.0, "bed_temp_1": 332.5},
+        "T-0d":  {"dp_across_bed": 1.38, "inlet_temp": 320.0, "outlet_temp": 309.0, "bed_temp_1": 334.0}
+      },
+      "predicted_failure_hours": 336,
+      "recommended_action": "Schedule catalyst regeneration during next planned shutdown. Increase monitoring frequency to 4-hour intervals.",
+      "parts_required": ["catalyst_bed_R301_full_charge"],
+      "labor_hours_estimate": 96,
+      "downtime_hours_avoided": 280
+    },
+    "heat_exchanger_tube_leak": {
+      "equipment_id": "E-401",
+      "failure_mode": "Tube Bundle Tube Leak",
+      "trigger_description": "Shell-side pressure drop increased 24%. Temperature cross detected on tube side outlet. Indicative of tube bundle perforation.",
+      "sensor_snapshots": {
+        "T-5d":  {"shell_inlet_temp": 385.0, "shell_outlet_temp": 180.0, "tube_inlet_temp": 160.0, "tube_outlet_temp": 348.0, "shell_inlet_pressure": 84.2, "shell_outlet_pressure": 83.8},
+        "T-3d":  {"shell_inlet_temp": 383.0, "shell_outlet_temp": 175.0, "tube_inlet_temp": 161.0, "tube_outlet_temp": 355.0, "shell_inlet_pressure": 84.0, "shell_outlet_pressure": 83.5},
+        "T-1d":  {"shell_inlet_temp": 381.0, "shell_outlet_temp": 168.0, "tube_inlet_temp": 162.0, "tube_outlet_temp": 366.0, "shell_inlet_pressure": 83.8, "shell_outlet_pressure": 83.2},
+        "T-0d":  {"shell_inlet_temp": 380.0, "shell_outlet_temp": 162.0, "tube_inlet_temp": 163.0, "tube_outlet_temp": 374.0, "shell_inlet_pressure": 83.5, "shell_outlet_pressure": 82.7}
+      },
+      "predicted_failure_hours": 96,
+      "recommended_action": "Immediate online plugging of suspect tubes (≤5% area). Schedule full bundle replacement during next 14-day turnaround.",
+      "parts_required": ["tube_bundle_E401_spare", "tube_plugs_x24", "gasket_set_E401"],
+      "labor_hours_estimate": 32,
+      "downtime_hours_avoided": 88
+    },
+    "compressor_valve_failure": {
+      "equipment_id": "K-201",
+      "failure_mode": "Discharge Valve Failure",
+      "trigger_description": "Stage-1 discharge temperature spiked +28°C above baseline. Compressor efficiency dropped from 0.82 to 0.71. Valve temperature sensor shows asymmetric heating.",
+      "sensor_snapshots": {
+        "T-12h": {"discharge_temp": 107.0, "suction_pressure": 6.2, "discharge_pressure": 42.1, "valve_temp_stage1": 108.0, "vibration_nde": 4.1},
+        "T-8h":  {"discharge_temp": 115.0, "suction_pressure": 6.1, "discharge_pressure": 41.8, "valve_temp_stage1": 118.0, "vibration_nde": 4.4},
+        "T-4h":  {"discharge_temp": 121.0, "suction_pressure": 6.0, "discharge_pressure": 41.5, "valve_temp_stage1": 127.0, "vibration_nde": 4.7},
+        "T-0h":  {"discharge_temp": 128.0, "suction_pressure": 5.9, "discharge_pressure": 41.0, "valve_temp_stage1": 135.0, "vibration_nde": 5.1}
+      },
+      "predicted_failure_hours": 24,
+      "recommended_action": "De-rate compressor to 70% capacity immediately. Schedule valve replacement within 16 hours. Transfer load to K-202.",
+      "parts_required": ["suction_valve_stage1_K201", "discharge_valve_stage1_K201", "valve_gasket_kit_K201"],
+      "labor_hours_estimate": 16,
+      "downtime_hours_avoided": 144
+    },
+    "safety_valve_overdue": {
+      "equipment_id": "PSV-501",
+      "failure_mode": "Inspection Overdue",
+      "trigger_description": "PSV-501 last inspection date 2023-07-15. Next due 2024-07-15. Current date exceeds deadline by 7 days. Regulatory non-compliance risk.",
+      "sensor_snapshots": {
+        "T-0d":  {"inlet_pressure": 78.5}
+      },
+      "predicted_failure_hours": null,
+      "regulatory_deadline": "2024-07-15",
+      "days_overdue": 7,
+      "recommended_action": "Issue immediate isolation and inspection permit. Shutdown reactor section R-301 for PSV-501 inspection and test.",
+      "parts_required": ["PSV-501-spring-kit", "PSV-501-seat-disc"],
+      "labor_hours_estimate": 12,
+      "compliance_bodies": ["API 510", "OSHA 1910.119", "Local Authority AHJ"]
+    },
+    "cui_risk": {
+      "equipment_id": "T-601",
+      "failure_mode": "Corrosion Under Insulation",
+      "trigger_description": "Risk-based inspection model identifies T-601 shell zones at elevated CUI risk. Last CUI survey 730 days ago. Operating in 50-175°C temperature range — highest CUI risk band.",
+      "sensor_snapshots": {
+        "T-0d": {"overhead_pressure": 1.8, "bottom_temp": 355.0, "tray_10_temp": 185.0}
+      },
+      "risk_score": 0.78,
+      "inspection_interval_days": 730,
+      "days_since_last_inspection": 756,
+      "recommended_action": "Schedule pulsed eddy current / radiography CUI survey on T-601 shell zones A4–A7. Estimate 3-day offline inspection.",
+      "parts_required": ["insulation_cladding_T601_zone_A"],
+      "labor_hours_estimate": 48
+    }
+  }
+}

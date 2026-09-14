@@ -1,0 +1,1422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Agentic Maintenance AI — IBM Carbon Executive Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+/* ── IBM Carbon G100 Design Tokens ─────────────────────────────────────── */
+:root {
+  --cds-background: #161616;
+  --cds-layer-01: #262626;
+  --cds-layer-02: #393939;
+  --cds-layer-03: #525252;
+  --cds-layer-hover-01: #333333;
+  --cds-border-subtle-01: #525252;
+  --cds-border-strong-01: #6f6f6f;
+  --cds-text-primary: #f4f4f4;
+  --cds-text-secondary: #c6c6c6;
+  --cds-text-helper: #a8a8a8;
+  --cds-interactive: #4589ff;
+  --cds-background-brand: #0f62fe;
+  --cds-support-success: #42be65;
+  --cds-support-error: #fa4d56;
+  --cds-support-warning: #f1c21b;
+  --cds-support-caution-major: #ff832b;
+  --cds-support-info: #4589ff;
+  --cds-link-primary: #78a9ff;
+  --cds-ai-aura-start: rgba(69,137,255,0.10);
+  --cds-ai-border-end: #4589ff;
+  --font-ibm: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
+  --spacing-01: 2px; --spacing-02: 4px; --spacing-03: 8px;
+  --spacing-04: 12px; --spacing-05: 16px; --spacing-06: 24px;
+  --spacing-07: 32px; --spacing-08: 40px; --spacing-09: 48px;
+  --spacing-10: 64px;
+}
+
+/* ── Reset & Base ────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font-ibm);
+  background: var(--cds-background);
+  color: var(--cds-text-primary);
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-x: hidden;
+}
+
+/* ── IBM Carbon Typography ───────────────────────────────────────────────── */
+.cds--label { font-size: 12px; letter-spacing: .32px; color: var(--cds-text-helper); text-transform: uppercase; }
+.cds--heading-01 { font-size: 14px; font-weight: 600; line-height: 1.4; }
+.cds--heading-02 { font-size: 16px; font-weight: 600; line-height: 1.4; }
+.cds--heading-03 { font-size: 20px; font-weight: 400; line-height: 1.4; }
+.cds--productive-heading-05 { font-size: 28px; font-weight: 300; line-height: 1.2; }
+.cds--body-compact-01 { font-size: 14px; letter-spacing: .16px; }
+.cds--body-01 { font-size: 14px; letter-spacing: .16px; line-height: 1.5; }
+.mono { font-family: var(--font-mono); font-size: 12px; }
+
+/* ── Shell / Top Nav ─────────────────────────────────────────────────────── */
+.cds--header {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 8000;
+  height: 48px;
+  background: var(--cds-layer-01);
+  border-bottom: 1px solid var(--cds-border-subtle-01);
+  display: flex; align-items: center; gap: var(--spacing-05);
+  padding: 0 var(--spacing-05);
+}
+.cds--header__name {
+  display: flex; align-items: center; gap: var(--spacing-03);
+  font-size: 14px; font-weight: 600; color: var(--cds-text-primary);
+  white-space: nowrap;
+}
+.cds--header__name svg { flex-shrink: 0; }
+.header-divider { width: 1px; height: 24px; background: var(--cds-border-subtle-01); }
+.header-subtitle { font-size: 14px; font-weight: 400; color: var(--cds-text-secondary); }
+.header-spacer { flex: 1; }
+.header-badge {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; color: var(--cds-text-secondary);
+  background: var(--cds-layer-02);
+  border: 1px solid var(--cds-border-subtle-01);
+  border-radius: 2px; padding: 4px 10px;
+}
+.pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--cds-support-success); animation: pulse-anim 2s infinite; }
+@keyframes pulse-anim {
+  0%,100% { box-shadow: 0 0 0 0 rgba(66,190,101,0.5); }
+  50% { box-shadow: 0 0 0 6px rgba(66,190,101,0); }
+}
+
+/* ── Left Nav / Tabs ─────────────────────────────────────────────────────── */
+.cds--side-nav {
+  position: fixed; top: 48px; left: 0; bottom: 0; width: 256px; z-index: 7000;
+  background: var(--cds-layer-01);
+  border-right: 1px solid var(--cds-border-subtle-01);
+  display: flex; flex-direction: column;
+  overflow-y: auto;
+}
+.nav-section-label {
+  padding: var(--spacing-05) var(--spacing-05) var(--spacing-03);
+  font-size: 11px; letter-spacing: .32px; text-transform: uppercase;
+  color: var(--cds-text-helper);
+}
+.nav-item {
+  display: flex; align-items: center; gap: var(--spacing-04);
+  padding: 12px var(--spacing-05);
+  font-size: 14px; color: var(--cds-text-secondary);
+  cursor: pointer; border-left: 4px solid transparent;
+  transition: background .1s, color .1s, border-color .1s;
+}
+.nav-item:hover { background: var(--cds-layer-hover-01); color: var(--cds-text-primary); }
+.nav-item.active {
+  background: var(--cds-layer-02);
+  color: var(--cds-text-primary);
+  border-left-color: var(--cds-interactive);
+  font-weight: 600;
+}
+.nav-item .nav-icon { font-size: 18px; width: 20px; text-align: center; }
+.nav-divider { height: 1px; background: var(--cds-border-subtle-01); margin: var(--spacing-03) 0; }
+
+/* ── Main Content ────────────────────────────────────────────────────────── */
+.cds--content {
+  margin-left: 256px;
+  margin-top: 48px;
+  padding: var(--spacing-06);
+  min-height: calc(100vh - 48px);
+}
+
+/* ── Page Header ─────────────────────────────────────────────────────────── */
+.page-header {
+  margin-bottom: var(--spacing-07);
+  padding-bottom: var(--spacing-06);
+  border-bottom: 1px solid var(--cds-border-subtle-01);
+}
+.page-header__eyebrow { font-size: 12px; color: var(--cds-link-primary); letter-spacing: .32px; margin-bottom: var(--spacing-02); }
+.page-header__title { font-size: 32px; font-weight: 300; color: var(--cds-text-primary); margin-bottom: var(--spacing-03); }
+.page-header__desc { font-size: 14px; color: var(--cds-text-secondary); max-width: 640px; }
+
+/* ── Grid ────────────────────────────────────────────────────────────────── */
+.grid { display: grid; gap: var(--spacing-05); }
+.grid-4 { grid-template-columns: repeat(4, 1fr); }
+.grid-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-2 { grid-template-columns: repeat(2, 1fr); }
+.grid-2-1 { grid-template-columns: 2fr 1fr; }
+.grid-1-2 { grid-template-columns: 1fr 2fr; }
+.col-span-2 { grid-column: span 2; }
+.col-span-3 { grid-column: span 3; }
+.col-span-4 { grid-column: span 4; }
+
+/* ── Carbon Tile ─────────────────────────────────────────────────────────── */
+.cds--tile {
+  background: var(--cds-layer-01);
+  border: 1px solid var(--cds-border-subtle-01);
+  padding: var(--spacing-05);
+  position: relative;
+  overflow: hidden;
+  transition: background .15s, border-color .15s;
+}
+.cds--tile:hover { background: var(--cds-layer-hover-01); border-color: var(--cds-border-strong-01); }
+.tile-label {
+  font-size: 12px; letter-spacing: .32px; text-transform: uppercase;
+  color: var(--cds-text-helper); margin-bottom: var(--spacing-03);
+}
+.tile-value {
+  font-size: 36px; font-weight: 300; color: var(--cds-text-primary);
+  line-height: 1; margin-bottom: var(--spacing-02);
+}
+.tile-value.success { color: var(--cds-support-success); }
+.tile-value.error { color: var(--cds-support-error); }
+.tile-value.warning { color: var(--cds-support-warning); }
+.tile-value.info { color: var(--cds-interactive); }
+.tile-unit { font-size: 14px; color: var(--cds-text-secondary); margin-left: 4px; }
+.tile-trend {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 12px; margin-top: var(--spacing-02);
+  padding: 2px 6px; border-radius: 2px;
+}
+.tile-trend.up { background: rgba(66,190,101,0.15); color: var(--cds-support-success); }
+.tile-trend.down { background: rgba(250,77,86,0.15); color: var(--cds-support-error); }
+.tile-trend.neutral { background: rgba(69,137,255,0.12); color: var(--cds-interactive); }
+.tile-footer {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  height: 3px; background: var(--cds-border-subtle-01);
+}
+.tile-footer-fill {
+  height: 100%; background: var(--cds-interactive);
+  transition: width 1.2s cubic-bezier(.4,0,.2,1);
+}
+.tile-footer-fill.success { background: var(--cds-support-success); }
+.tile-footer-fill.warning { background: var(--cds-support-warning); }
+.tile-footer-fill.error { background: var(--cds-support-error); }
+
+/* ── AI Gradient Tile ────────────────────────────────────────────────────── */
+.ai-tile {
+  background: linear-gradient(135deg, var(--cds-layer-01) 0%, #1a2035 100%);
+  border: 1px solid var(--cds-ai-border-end);
+  position: relative;
+}
+.ai-tile::before {
+  content: ''; position: absolute; inset: 0;
+  background: var(--cds-ai-aura-start);
+  pointer-events: none;
+}
+.ai-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; background: rgba(69,137,255,0.2);
+  border: 1px solid rgba(69,137,255,0.4);
+  color: #78a9ff; padding: 2px 8px; border-radius: 2px;
+  margin-bottom: var(--spacing-03);
+}
+
+/* ── Chart Container ─────────────────────────────────────────────────────── */
+.chart-tile { padding: var(--spacing-05); }
+.chart-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--spacing-05); }
+.chart-title { font-size: 14px; font-weight: 600; color: var(--cds-text-primary); }
+.chart-subtitle { font-size: 12px; color: var(--cds-text-helper); margin-top: 2px; }
+.chart-wrap { position: relative; }
+
+/* ── Equipment Health Map ────────────────────────────────────────────────── */
+.health-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--spacing-03); }
+.health-card {
+  background: var(--cds-layer-02);
+  border: 1px solid var(--cds-border-subtle-01);
+  border-radius: 2px; padding: var(--spacing-04);
+  cursor: pointer;
+  transition: transform .15s, box-shadow .15s;
+  position: relative; overflow: hidden;
+}
+.health-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
+.health-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+}
+.health-card.green::before { background: var(--cds-support-success); }
+.health-card.amber::before { background: var(--cds-support-warning); }
+.health-card.red::before { background: var(--cds-support-error); }
+.health-card .eq-tag { font-size: 16px; font-weight: 600; color: var(--cds-text-primary); }
+.health-card .eq-name { font-size: 11px; color: var(--cds-text-helper); margin: 2px 0 var(--spacing-03); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.health-card .eq-status { font-size: 11px; font-weight: 600; }
+.health-card.green .eq-status { color: var(--cds-support-success); }
+.health-card.amber .eq-status { color: var(--cds-support-warning); }
+.health-card.red .eq-status { color: var(--cds-support-error); }
+.health-card .eq-val { font-size: 11px; color: var(--cds-text-secondary); margin-top: 2px; font-family: var(--font-mono); }
+.health-sparkline { margin-top: var(--spacing-03); height: 28px; }
+
+/* ── Workflow Pipeline Visual ────────────────────────────────────────────── */
+.pipeline-stage {
+  display: flex; flex-direction: column; align-items: center; flex: 1;
+  position: relative;
+}
+.pipeline-stage::after {
+  content: ''; position: absolute; top: 16px; left: calc(50% + 20px);
+  right: calc(-50% + 20px); height: 2px;
+  background: var(--cds-border-subtle-01);
+}
+.pipeline-stage:last-child::after { display: none; }
+.pipeline-node {
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 2px solid var(--cds-border-subtle-01);
+  background: var(--cds-layer-02);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; position: relative; z-index: 1;
+  transition: background .3s, border-color .3s, box-shadow .3s;
+}
+.pipeline-node.done {
+  border-color: var(--cds-support-success);
+  background: rgba(66,190,101,0.15);
+  box-shadow: 0 0 12px rgba(66,190,101,0.3);
+}
+.pipeline-node.active {
+  border-color: var(--cds-interactive);
+  background: rgba(69,137,255,0.15);
+  box-shadow: 0 0 12px rgba(69,137,255,0.4);
+  animation: active-pulse 2s infinite;
+}
+.pipeline-node.pending { opacity: 0.4; }
+@keyframes active-pulse {
+  0%,100% { box-shadow: 0 0 8px rgba(69,137,255,0.3); }
+  50% { box-shadow: 0 0 20px rgba(69,137,255,0.6); }
+}
+.pipeline-label { font-size: 10px; color: var(--cds-text-helper); margin-top: 6px; text-align: center; max-width: 60px; line-height: 1.3; }
+
+/* ── Agent Log ───────────────────────────────────────────────────────────── */
+.agent-log {
+  background: #0d1117;
+  border: 1px solid var(--cds-border-subtle-01);
+  font-family: var(--font-mono);
+  font-size: 12px; line-height: 1.6;
+  padding: var(--spacing-04);
+  height: 280px; overflow-y: auto;
+}
+.log-line { display: flex; gap: var(--spacing-03); margin-bottom: 2px; }
+.log-time { color: #6f6f6f; flex-shrink: 0; }
+.log-agent { flex-shrink: 0; width: 180px; }
+.log-agent.orchestrator { color: #78a9ff; }
+.log-agent.diagnostics { color: #3ddbd9; }
+.log-agent.criticality { color: #f1c21b; }
+.log-agent.compliance { color: #ff832b; }
+.log-agent.roi { color: #42be65; }
+.log-agent.workorder { color: #be95ff; }
+.log-agent.tool { color: #a8a8a8; }
+.log-msg { color: var(--cds-text-secondary); flex: 1; }
+.log-msg.highlight { color: var(--cds-text-primary); }
+
+/* ── Tags / Badges ───────────────────────────────────────────────────────── */
+.cds--tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 12px; padding: 2px 8px; border-radius: 2px;
+}
+.cds--tag--red { background: rgba(250,77,86,0.15); color: var(--cds-support-error); border: 1px solid rgba(250,77,86,0.3); }
+.cds--tag--yellow { background: rgba(241,194,27,0.15); color: var(--cds-support-warning); border: 1px solid rgba(241,194,27,0.3); }
+.cds--tag--green { background: rgba(66,190,101,0.15); color: var(--cds-support-success); border: 1px solid rgba(66,190,101,0.3); }
+.cds--tag--blue { background: rgba(69,137,255,0.15); color: var(--cds-interactive); border: 1px solid rgba(69,137,255,0.3); }
+.cds--tag--orange { background: rgba(255,131,43,0.15); color: var(--cds-support-caution-major); border: 1px solid rgba(255,131,43,0.3); }
+.cds--tag--gray { background: rgba(141,141,141,0.15); color: #c6c6c6; border: 1px solid rgba(141,141,141,0.3); }
+
+/* ── Data Table ──────────────────────────────────────────────────────────── */
+.cds--data-table { width: 100%; border-collapse: collapse; }
+.cds--data-table th {
+  background: var(--cds-layer-02);
+  border-bottom: 2px solid var(--cds-border-subtle-01);
+  padding: var(--spacing-04) var(--spacing-05);
+  text-align: left; font-size: 12px; font-weight: 600;
+  letter-spacing: .32px; text-transform: uppercase;
+  color: var(--cds-text-helper);
+}
+.cds--data-table td {
+  padding: var(--spacing-04) var(--spacing-05);
+  border-bottom: 1px solid var(--cds-border-subtle-01);
+  font-size: 14px; color: var(--cds-text-secondary);
+  vertical-align: middle;
+}
+.cds--data-table tr:hover td { background: var(--cds-layer-hover-01); }
+
+/* ── Gauge / Donut ───────────────────────────────────────────────────────── */
+.gauge-wrap { position: relative; display: flex; align-items: center; justify-content: center; }
+.gauge-center {
+  position: absolute; text-align: center; pointer-events: none;
+}
+.gauge-big { font-size: 28px; font-weight: 300; color: var(--cds-text-primary); }
+.gauge-sub { font-size: 12px; color: var(--cds-text-helper); }
+
+/* ── Compliance Countdown ────────────────────────────────────────────────── */
+.countdown-card {
+  background: var(--cds-layer-02);
+  border: 1px solid var(--cds-border-subtle-01);
+  border-left: 4px solid var(--cds-support-error);
+  padding: var(--spacing-04) var(--spacing-05);
+  margin-bottom: var(--spacing-03);
+  display: flex; align-items: center; gap: var(--spacing-05);
+}
+.countdown-card.warning { border-left-color: var(--cds-support-warning); }
+.countdown-card.ok { border-left-color: var(--cds-support-success); }
+.countdown-days { font-size: 32px; font-weight: 300; min-width: 60px; text-align: right; color: var(--cds-support-error); }
+.countdown-card.warning .countdown-days { color: var(--cds-support-warning); }
+.countdown-card.ok .countdown-days { color: var(--cds-support-success); }
+.countdown-info { flex: 1; }
+.countdown-title { font-size: 14px; font-weight: 600; color: var(--cds-text-primary); }
+.countdown-detail { font-size: 12px; color: var(--cds-text-helper); margin-top: 2px; }
+
+/* ── Animated Number Counter ─────────────────────────────────────────────── */
+@keyframes count-up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.animated-val { animation: count-up .6s ease both; }
+
+/* ── Section Heading ─────────────────────────────────────────────────────── */
+.section-heading {
+  font-size: 18px; font-weight: 400; color: var(--cds-text-primary);
+  margin-bottom: var(--spacing-05); padding-bottom: var(--spacing-03);
+  border-bottom: 1px solid var(--cds-border-subtle-01);
+  display: flex; align-items: center; gap: var(--spacing-03);
+}
+.section-heading .icon { font-size: 20px; }
+
+/* ── Tabs ────────────────────────────────────────────────────────────────── */
+.cds--tabs { display: flex; border-bottom: 1px solid var(--cds-border-subtle-01); margin-bottom: var(--spacing-06); }
+.cds--tab {
+  padding: 12px var(--spacing-06); font-size: 14px;
+  color: var(--cds-text-secondary); cursor: pointer;
+  border-bottom: 2px solid transparent; transition: color .1s, border-color .1s;
+  white-space: nowrap;
+}
+.cds--tab:hover { color: var(--cds-text-primary); }
+.cds--tab.active { color: var(--cds-text-primary); border-bottom-color: var(--cds-interactive); font-weight: 600; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── Progress Bar ────────────────────────────────────────────────────────── */
+.progress-bar { height: 4px; background: var(--cds-border-subtle-01); border-radius: 2px; overflow: hidden; }
+.progress-fill {
+  height: 100%; border-radius: 2px;
+  transition: width 1.5s cubic-bezier(.4,0,.2,1);
+}
+
+/* ── Notification / Inline Alert ─────────────────────────────────────────── */
+.cds--inline-notification {
+  display: flex; align-items: flex-start; gap: var(--spacing-04);
+  padding: var(--spacing-04) var(--spacing-05);
+  border-left: 4px solid;
+  font-size: 14px; margin-bottom: var(--spacing-03);
+}
+.cds--inline-notification.error { background: rgba(250,77,86,0.1); border-color: var(--cds-support-error); }
+.cds--inline-notification.warning { background: rgba(241,194,27,0.1); border-color: var(--cds-support-warning); }
+.cds--inline-notification.success { background: rgba(66,190,101,0.1); border-color: var(--cds-support-success); }
+.notif-title { font-weight: 600; color: var(--cds-text-primary); }
+.notif-body { color: var(--cds-text-secondary); font-size: 13px; margin-top: 2px; }
+
+/* ── Scenario Run Button ─────────────────────────────────────────────────── */
+.cds--btn {
+  display: inline-flex; align-items: center; gap: var(--spacing-03);
+  padding: 11px var(--spacing-05);
+  font-size: 14px; font-family: var(--font-ibm);
+  font-weight: 400; cursor: pointer; border: none;
+  letter-spacing: .16px; transition: background .15s;
+}
+.cds--btn--primary { background: var(--cds-background-brand); color: #fff; }
+.cds--btn--primary:hover { background: #0353e9; }
+.cds--btn--secondary { background: var(--cds-layer-02); color: var(--cds-text-primary); border: 1px solid var(--cds-border-strong-01); }
+.cds--btn--secondary:hover { background: var(--cds-layer-03); }
+.cds--btn--ghost { background: transparent; color: var(--cds-link-primary); }
+.cds--btn--ghost:hover { background: var(--cds-layer-hover-01); }
+.btn-row { display: flex; gap: var(--spacing-03); flex-wrap: wrap; margin-top: var(--spacing-05); }
+
+/* ── Scrollbar ───────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--cds-border-strong-01); border-radius: 2px; }
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .grid-3 { grid-template-columns: repeat(2, 1fr); }
+  .health-grid { grid-template-columns: repeat(2, 1fr); }
+  .cds--side-nav { display: none; }
+  .cds--content { margin-left: 0; }
+}
+</style>
+</head>
+<body>
+<!-- ═══════════════════════ HEADER ═══════════════════════ -->
+<header class="cds--header">
+  <div class="cds--header__name">
+    <!-- IBM 8-bar logo SVG -->
+    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="16" viewBox="0 0 64 26" fill="#0f62fe">
+      <rect x="0" y="0" width="4" height="4"/><rect x="6" y="0" width="4" height="4"/>
+      <rect x="12" y="0" width="8" height="4"/><rect x="22" y="0" width="8" height="4"/>
+      <rect x="32" y="0" width="8" height="4"/><rect x="42" y="0" width="4" height="4"/>
+      <rect x="48" y="0" width="4" height="4"/><rect x="54" y="0" width="4" height="4"/>
+      <rect x="60" y="0" width="4" height="4"/>
+      <rect x="0" y="6" width="4" height="4"/><rect x="6" y="6" width="4" height="4"/>
+      <rect x="12" y="6" width="18" height="4"/><rect x="32" y="6" width="18" height="4"/>
+      <rect x="54" y="6" width="4" height="4"/><rect x="60" y="6" width="4" height="4"/>
+      <rect x="0" y="12" width="4" height="4"/><rect x="6" y="12" width="4" height="4"/>
+      <rect x="12" y="12" width="8" height="4"/><rect x="22" y="12" width="8" height="4"/>
+      <rect x="32" y="12" width="8" height="4"/><rect x="42" y="12" width="4" height="4"/>
+      <rect x="48" y="12" width="4" height="4"/><rect x="54" y="12" width="4" height="4"/>
+      <rect x="60" y="12" width="4" height="4"/>
+      <rect x="0" y="18" width="64" height="4"/>
+      <rect x="0" y="22" width="64" height="4"/>
+    </svg>
+    Agentic Maintenance AI
+  </div>
+  <div class="header-divider"></div>
+  <span class="header-subtitle">Chemicals &amp; Petrochemicals | Critical Asset Management</span>
+  <div class="header-spacer"></div>
+  <div class="header-badge"><span class="pulse"></span>Live Simulation</div>
+  <div class="header-badge" style="margin-left:8px" id="clock">--:--:--</div>
+</header>
+
+<!-- ═══════════════════════ SIDE NAV ═══════════════════════ -->
+<nav class="cds--side-nav">
+  <div class="nav-section-label">Operations</div>
+  <div class="nav-item active" onclick="showTab('ops',this)">
+    <span class="nav-icon">🏭</span> Real-Time Operations
+  </div>
+  <div class="nav-item" onclick="showTab('finance',this)">
+    <span class="nav-icon">💰</span> Financial Performance
+  </div>
+  <div class="nav-item" onclick="showTab('kpi',this)">
+    <span class="nav-icon">📊</span> Operational KPIs
+  </div>
+  <div class="nav-divider"></div>
+  <div class="nav-section-label">AI Activity</div>
+  <div class="nav-item" onclick="showTab('agent',this)">
+    <span class="nav-icon">🤖</span> Agentic AI Activity
+  </div>
+  <div class="nav-item" onclick="showTab('pipeline',this)">
+    <span class="nav-icon">⚙️</span> Pipeline Monitor
+  </div>
+  <div class="nav-divider"></div>
+  <div class="nav-section-label">Compliance</div>
+  <div class="nav-item" onclick="showTab('compliance',this)">
+    <span class="nav-icon">🛡️</span> Regulatory &amp; HSE
+  </div>
+  <div class="nav-divider"></div>
+  <div class="nav-section-label">Demo</div>
+  <div class="nav-item" onclick="showTab('demo',this)">
+    <span class="nav-icon">▶</span> Run Scenario
+  </div>
+</nav>
+
+<!-- ═══════════════════════ MAIN CONTENT ═══════════════════════ -->
+<main class="cds--content">
+
+  <!-- ── TOP KPI STRIP ── -->
+  <div class="grid grid-4" style="margin-bottom:var(--spacing-06)" id="kpi-strip">
+    <div class="cds--tile ai-tile">
+      <div class="ai-badge">⚡ AI ROI</div>
+      <div class="tile-label">Cumulative Annual ROI</div>
+      <div class="tile-value success animated-val" id="kpi-roi">35,119<span class="tile-unit">%</span></div>
+      <div class="tile-trend up">↑ +2,680pp vs last month</div>
+      <div class="tile-footer"><div class="tile-footer-fill success" id="fp-roi" style="width:0%"></div></div>
+    </div>
+    <div class="cds--tile">
+      <div class="tile-label">Total Net Savings YTD</div>
+      <div class="tile-value info animated-val" id="kpi-savings">$87.8M</div>
+      <div class="tile-trend up">↑ $2.7M this week</div>
+      <div class="tile-footer"><div class="tile-footer-fill" id="fp-savings" style="width:0%"></div></div>
+    </div>
+    <div class="cds--tile">
+      <div class="tile-label">Active Workflows</div>
+      <div class="tile-value animated-val" id="kpi-wf">6</div>
+      <div><span class="cds--tag cds--tag--yellow">2 Pending Approval</span></div>
+      <div class="tile-footer"><div class="tile-footer-fill warning" id="fp-wf" style="width:0%"></div></div>
+    </div>
+    <div class="cds--tile">
+      <div class="tile-label">First-Time Fix Rate</div>
+      <div class="tile-value success animated-val">87.5<span class="tile-unit">%</span></div>
+      <div class="tile-trend up">↑ +22.5pp vs baseline</div>
+      <div class="tile-footer"><div class="tile-footer-fill success" style="width:0%" id="fp-ftf"></div></div>
+    </div>
+  </div>
+
+  <!-- ══════════════ TAB: REAL-TIME OPERATIONS ══════════════ -->
+  <div id="tab-ops" class="tab-panel active">
+    <div class="section-heading"><span class="icon">🏭</span>Equipment Health Map</div>
+    <div class="health-grid" style="margin-bottom:var(--spacing-06)">
+      <div class="health-card red" onclick="triggerScenario('bearing_vibration_anomaly')">
+        <div class="eq-tag">P-101</div>
+        <div class="eq-name">Crude Oil Pump</div>
+        <div class="eq-status">CRITICAL — Bearing</div>
+        <div class="eq-val">VIB: 8.4 mm/s ↑</div>
+        <canvas class="health-sparkline" id="sp-P101"></canvas>
+      </div>
+      <div class="health-card red" onclick="triggerScenario('compressor_valve_failure')">
+        <div class="eq-tag">K-201</div>
+        <div class="eq-name">HP Gas Compressor</div>
+        <div class="eq-status">EMERGENCY — Valve</div>
+        <div class="eq-val">DT: 128°C ↑ η:0.71↓</div>
+        <canvas class="health-sparkline" id="sp-K201"></canvas>
+      </div>
+      <div class="health-card amber" onclick="triggerScenario('heat_exchanger_tube_leak')">
+        <div class="eq-tag">E-401</div>
+        <div class="eq-name">Naphtha HX</div>
+        <div class="eq-status">HIGH — Tube Leak</div>
+        <div class="eq-val">Tout: 374°C ↑</div>
+        <canvas class="health-sparkline" id="sp-E401"></canvas>
+      </div>
+      <div class="health-card amber" onclick="triggerScenario('reactor_fouling')">
+        <div class="eq-tag">R-301</div>
+        <div class="eq-name">Hydrotreater Reactor</div>
+        <div class="eq-status">HIGH — Fouling</div>
+        <div class="eq-val">ΔP: 1.38 bar +58%↑</div>
+        <canvas class="health-sparkline" id="sp-R301"></canvas>
+      </div>
+      <div class="health-card amber" onclick="triggerScenario('safety_valve_overdue')">
+        <div class="eq-tag">PSV-501</div>
+        <div class="eq-name">Reactor PSV</div>
+        <div class="eq-status">COMPLIANCE — Overdue</div>
+        <div class="eq-val">+7 days overdue</div>
+        <canvas class="health-sparkline" id="sp-PSV501"></canvas>
+      </div>
+      <div class="health-card amber" onclick="triggerScenario('cui_risk')">
+        <div class="eq-tag">T-601</div>
+        <div class="eq-name">Distillation Column</div>
+        <div class="eq-status">MEDIUM — CUI Risk</div>
+        <div class="eq-val">Risk Score: 0.78</div>
+        <canvas class="health-sparkline" id="sp-T601"></canvas>
+      </div>
+      <div class="health-card green">
+        <div class="eq-tag">P-102</div>
+        <div class="eq-name">Naphtha Feed Pump</div>
+        <div class="eq-status">NORMAL</div>
+        <div class="eq-val">VIB: 2.1 mm/s ✓</div>
+        <canvas class="health-sparkline" id="sp-P102"></canvas>
+      </div>
+      <div class="health-card green">
+        <div class="eq-tag">P-103</div>
+        <div class="eq-name">Reflux Pump</div>
+        <div class="eq-status">NORMAL</div>
+        <div class="eq-val">VIB: 1.9 mm/s ✓</div>
+        <canvas class="health-sparkline" id="sp-P103"></canvas>
+      </div>
+      <div class="health-card green">
+        <div class="eq-tag">K-202</div>
+        <div class="eq-name">Wet Gas Compressor</div>
+        <div class="eq-status">NORMAL</div>
+        <div class="eq-val">DT: 105°C ✓</div>
+        <canvas class="health-sparkline" id="sp-K202"></canvas>
+      </div>
+      <div class="health-card green">
+        <div class="eq-tag">E-402</div>
+        <div class="eq-name">Preheat HX</div>
+        <div class="eq-status">NORMAL</div>
+        <div class="eq-val">ΔP: 0.42 bar ✓</div>
+        <canvas class="health-sparkline" id="sp-E402"></canvas>
+      </div>
+    </div>
+
+    <div class="grid grid-2">
+      <div class="cds--tile chart-tile">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Alert Severity Distribution</div>
+            <div class="chart-subtitle">Current monitoring period</div>
+          </div>
+        </div>
+        <div class="chart-wrap" style="height:220px">
+          <canvas id="chart-severity"></canvas>
+        </div>
+      </div>
+      <div class="cds--tile chart-tile">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Workflow Status Breakdown</div>
+            <div class="chart-subtitle">All active workflows</div>
+          </div>
+        </div>
+        <div class="chart-wrap" style="height:220px">
+          <canvas id="chart-workflow-states"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ TAB: FINANCIAL PERFORMANCE ══════════════ -->
+  <div id="tab-finance" class="tab-panel">
+    <div class="grid grid-2-1" style="margin-bottom:var(--spacing-05)">
+      <div class="cds--tile chart-tile">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Monthly Avoided Downtime Cost vs Maintenance Cost</div>
+            <div class="chart-subtitle">12-month rolling window</div>
+          </div>
+          <span class="cds--tag cds--tag--green">YTD +35,119% ROI</span>
+        </div>
+        <div class="chart-wrap" style="height:280px">
+          <canvas id="chart-monthly-cost"></canvas>
+        </div>
+      </div>
+      <div class="cds--tile chart-tile">
+        <div class="chart-header"><div class="chart-title">ROI Gauge</div></div>
+        <div class="gauge-wrap" style="height:180px">
+          <canvas id="chart-roi-gauge" width="220" height="180"></canvas>
+          <div class="gauge-center">
+            <div class="gauge-big" style="color:var(--cds-support-success)">35K<span style="font-size:16px">%</span></div>
+            <div class="gauge-sub">Annual ROI</div>
+          </div>
+        </div>
+        <div style="margin-top:var(--spacing-05)">
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+            <span style="color:var(--cds-text-helper)">Net Savings vs AI Cost</span>
+            <span style="color:var(--cds-support-success)">$87.8M / $0.25M</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" id="pb-roi" style="background:var(--cds-support-success);width:0%"></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="grid grid-3">
+      <div class="cds--tile chart-tile">
+        <div class="chart-header"><div class="chart-title">Maintenance Type Split</div></div>
+        <div class="chart-wrap" style="height:200px">
+          <canvas id="chart-maint-type"></canvas>
+        </div>
+      </div>
+      <div class="cds--tile chart-tile col-span-2">
+        <div class="chart-header">
+          <div class="chart-title">Cumulative Net Savings — 12 Months</div>
+        </div>
+        <div class="chart-wrap" style="height:200px">
+          <canvas id="chart-cumulative"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ TAB: OPERATIONAL KPIs ══════════════ -->
+  <div id="tab-kpi" class="tab-panel">
+    <div class="grid grid-4" style="margin-bottom:var(--spacing-05)">
+      <div class="cds--tile">
+        <div class="tile-label">PM Compliance Rate</div>
+        <div class="tile-value success">69.6<span class="tile-unit">%</span></div>
+        <div class="progress-bar" style="margin-top:var(--spacing-03)">
+          <div class="progress-fill" id="pb-pm" style="background:var(--cds-support-success);width:0%"></div>
+        </div>
+        <div class="tile-trend up" style="margin-top:6px">↑ +4.6pp vs baseline</div>
+      </div>
+      <div class="cds--tile">
+        <div class="tile-label">Wrench Time Improvement</div>
+        <div class="tile-value info">69.0<span class="tile-unit">%</span></div>
+        <div class="progress-bar" style="margin-top:var(--spacing-03)">
+          <div class="progress-fill" id="pb-wrench" style="width:0%"></div>
+        </div>
+        <div class="tile-trend up" style="margin-top:6px">↑ AI-assisted diagnosis</div>
+      </div>
+      <div class="cds--tile">
+        <div class="tile-label">Backlog Reduction</div>
+        <div class="tile-value warning">41.4<span class="tile-unit">%</span></div>
+        <div class="progress-bar" style="margin-top:var(--spacing-03)">
+          <div class="progress-fill" id="pb-backlog" style="background:var(--cds-support-warning);width:0%"></div>
+        </div>
+        <div class="tile-trend up" style="margin-top:6px">↑ +41pp vs pre-AI</div>
+      </div>
+      <div class="cds--tile">
+        <div class="tile-label">First-Time Fix Rate</div>
+        <div class="tile-value success">87.5<span class="tile-unit">%</span></div>
+        <div class="progress-bar" style="margin-top:var(--spacing-03)">
+          <div class="progress-fill" id="pb-ftf2" style="background:var(--cds-support-success);width:0%"></div>
+        </div>
+        <div class="tile-trend up" style="margin-top:6px">↑ +22.5pp vs reactive</div>
+      </div>
+    </div>
+    <div class="grid grid-2">
+      <div class="cds--tile chart-tile">
+        <div class="chart-header">
+          <div class="chart-title">MTBF — Baseline vs AI-Assisted</div>
+          <div class="chart-subtitle">Hours between failures, by equipment</div>
+        </div>
+        <div class="chart-wrap" style="height:280px">
+          <canvas id="chart-mtbf"></canvas>
+        </div>
+      </div>
+      <div class="cds--tile chart-tile">
+        <div class="chart-header">
+          <div class="chart-title">Monthly Work Order Volume</div>
+          <div class="chart-subtitle">PdM vs CM vs Statutory</div>
+        </div>
+        <div class="chart-wrap" style="height:280px">
+          <canvas id="chart-wo-volume"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ TAB: AGENTIC AI ACTIVITY ══════════════ -->
+  <div id="tab-agent" class="tab-panel">
+    <div class="grid grid-2" style="margin-bottom:var(--spacing-05)">
+      <div class="cds--tile">
+        <div class="tile-label" style="margin-bottom:var(--spacing-04)">Agent Decision Log — Live Feed</div>
+        <div class="agent-log" id="agent-log"></div>
+      </div>
+      <div class="cds--tile chart-tile">
+        <div class="chart-header"><div class="chart-title">Tool Call Frequency</div></div>
+        <div class="chart-wrap" style="height:260px">
+          <canvas id="chart-tool-freq"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="grid grid-3">
+      <div class="cds--tile chart-tile">
+        <div class="chart-header"><div class="chart-title">LLM Token Usage by Scenario</div></div>
+        <div class="chart-wrap" style="height:200px">
+          <canvas id="chart-llm-tokens"></canvas>
+        </div>
+      </div>
+      <div class="cds--tile chart-tile">
+        <div class="chart-header"><div class="chart-title">Approval Turnaround Time</div></div>
+        <div class="chart-wrap" style="height:200px">
+          <canvas id="chart-approval-time"></canvas>
+        </div>
+      </div>
+      <div class="cds--tile chart-tile">
+        <div class="chart-header"><div class="chart-title">Agent Invocations per Pipeline</div></div>
+        <div class="chart-wrap" style="height:200px">
+          <canvas id="chart-agent-inv"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ TAB: PIPELINE MONITOR ══════════════ -->
+  <div id="tab-pipeline" class="tab-panel">
+    <div class="section-heading"><span class="icon">⚙️</span>Agentic Workflow Pipeline</div>
+    <div class="cds--tile" style="padding:var(--spacing-06);margin-bottom:var(--spacing-05)">
+      <div style="display:flex;align-items:flex-start;gap:0" id="pipeline-stages">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+    <div class="cds--tile">
+      <div class="tile-label" style="margin-bottom:var(--spacing-04)">Active Work Orders</div>
+      <table class="cds--data-table" style="width:100%">
+        <thead>
+          <tr>
+            <th>Workflow ID</th><th>Equipment</th><th>Scenario</th>
+            <th>Priority</th><th>State</th><th>Net Savings</th><th>ROI</th>
+          </tr>
+        </thead>
+        <tbody id="wo-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══════════════ TAB: REGULATORY ══════════════ -->
+  <div id="tab-compliance" class="tab-panel">
+    <div class="section-heading"><span class="icon">🛡️</span>Regulatory &amp; HSE Compliance</div>
+    <div class="cds--inline-notification error">
+      <div>
+        <div class="notif-title">⚠ 2 Overdue Inspections</div>
+        <div class="notif-body">PSV-501 (7 days), T-601 CUI Survey (26 days). Regulatory action required.</div>
+      </div>
+    </div>
+    <div style="margin-bottom:var(--spacing-06)">
+      <div class="countdown-card">
+        <div class="countdown-days">+7d</div>
+        <div class="countdown-info">
+          <div class="countdown-title">PSV-501 — Annual Inspection OVERDUE</div>
+          <div class="countdown-detail">API 510 | OSHA 1910.119 | AHJ notification required | Last: 2023-07-15</div>
+        </div>
+        <span class="cds--tag cds--tag--red">NON-COMPLIANT</span>
+      </div>
+      <div class="countdown-card warning">
+        <div class="countdown-days" style="color:var(--cds-support-warning)">+26d</div>
+        <div class="countdown-info">
+          <div class="countdown-title">T-601 — CUI Survey OVERDUE</div>
+          <div class="countdown-detail">API 581 RBI | Risk Score 0.78 | Last survey: 2022-07-01</div>
+        </div>
+        <span class="cds--tag cds--tag--yellow">ACTION REQUIRED</span>
+      </div>
+      <div class="countdown-card ok">
+        <div class="countdown-days" style="color:var(--cds-support-success)">184d</div>
+        <div class="countdown-info">
+          <div class="countdown-title">PSV-502 — Annual Inspection DUE 2025-01-10</div>
+          <div class="countdown-detail">API 510 | Last: 2024-01-10 | Status: Compliant</div>
+        </div>
+        <span class="cds--tag cds--tag--green">COMPLIANT</span>
+      </div>
+      <div class="countdown-card ok">
+        <div class="countdown-days" style="color:var(--cds-support-success)">373d</div>
+        <div class="countdown-info">
+          <div class="countdown-title">E-402 — CUI Survey DUE 2025-03-15</div>
+          <div class="countdown-detail">API 581 | Risk Score 0.54 | Last: 2023-03-15</div>
+        </div>
+        <span class="cds--tag cds--tag--green">COMPLIANT</span>
+      </div>
+    </div>
+    <div class="cds--tile chart-tile">
+      <div class="chart-header"><div class="chart-title">Compliance Status by Equipment</div></div>
+      <div class="chart-wrap" style="height:220px">
+        <canvas id="chart-compliance"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ TAB: RUN SCENARIO ══════════════ -->
+  <div id="tab-demo" class="tab-panel">
+    <div class="section-heading"><span class="icon">▶</span>Run Demo Scenario</div>
+    <div class="cds--inline-notification success">
+      <div>
+        <div class="notif-title">Offline Mode Active</div>
+        <div class="notif-body">All scenarios use Mock LLM — no API key required. Click any card to simulate.</div>
+      </div>
+    </div>
+    <div class="grid grid-3" style="margin-top:var(--spacing-05)">
+      <div class="cds--tile" style="cursor:pointer;border-left:4px solid var(--cds-support-error)" onclick="runDemo('bearing')">
+        <div class="cds--tag cds--tag--red" style="margin-bottom:var(--spacing-03)">URGENT</div>
+        <div class="cds--heading-02" style="margin-bottom:var(--spacing-03)">P-101 Bearing Vibration</div>
+        <div class="cds--body-01" style="color:var(--cds-text-secondary)">NDE bearing at 8.4 mm/s · 48h TTF · $1.19M savings</div>
+        <div class="btn-row"><button class="cds--btn cds--btn--primary">▶ Run Pipeline</button></div>
+      </div>
+      <div class="cds--tile" style="cursor:pointer;border-left:4px solid var(--cds-support-error)" onclick="runDemo('compressor')">
+        <div class="cds--tag cds--tag--red" style="margin-bottom:var(--spacing-03)">EMERGENCY</div>
+        <div class="cds--heading-02" style="margin-bottom:var(--spacing-03)">K-201 Valve Failure</div>
+        <div class="cds--body-01" style="color:var(--cds-text-secondary)">Discharge 128°C · 24h TTF · $2.68M savings</div>
+        <div class="btn-row"><button class="cds--btn cds--btn--primary">▶ Run Pipeline</button></div>
+      </div>
+      <div class="cds--tile" style="cursor:pointer;border-left:4px solid var(--cds-support-warning)" onclick="runDemo('reactor')">
+        <div class="cds--tag cds--tag--yellow" style="margin-bottom:var(--spacing-03)">HIGH</div>
+        <div class="cds--heading-02" style="margin-bottom:var(--spacing-03)">R-301 Catalyst Fouling</div>
+        <div class="cds--body-01" style="color:var(--cds-text-secondary)">ΔP +58% · 336h TTF · $5.03M savings</div>
+        <div class="btn-row"><button class="cds--btn cds--btn--secondary">▶ Run Pipeline</button></div>
+      </div>
+      <div class="cds--tile" style="cursor:pointer;border-left:4px solid var(--cds-support-warning)" onclick="runDemo('hx')">
+        <div class="cds--tag cds--tag--yellow" style="margin-bottom:var(--spacing-03)">HIGH</div>
+        <div class="cds--heading-02" style="margin-bottom:var(--spacing-03)">E-401 Tube Leak</div>
+        <div class="cds--body-01" style="color:var(--cds-text-secondary)">Temp cross detected · 96h TTF · $1.64M savings</div>
+        <div class="btn-row"><button class="cds--btn cds--btn--secondary">▶ Run Pipeline</button></div>
+      </div>
+      <div class="cds--tile" style="cursor:pointer;border-left:4px solid var(--cds-support-caution-major)" onclick="runDemo('psv')">
+        <div class="cds--tag cds--tag--orange" style="margin-bottom:var(--spacing-03)">STATUTORY</div>
+        <div class="cds--heading-02" style="margin-bottom:var(--spacing-03)">PSV-501 Compliance</div>
+        <div class="cds--body-01" style="color:var(--cds-text-secondary)">Overdue 7 days · OSHA 1910.119 · AHJ required</div>
+        <div class="btn-row"><button class="cds--btn cds--btn--secondary">▶ Run Pipeline</button></div>
+      </div>
+      <div class="cds--tile" style="cursor:pointer;border-left:4px solid var(--cds-interactive)" onclick="runDemo('cui')">
+        <div class="cds--tag cds--tag--blue" style="margin-bottom:var(--spacing-03)">MEDIUM</div>
+        <div class="cds--heading-02" style="margin-bottom:var(--spacing-03)">T-601 CUI Risk</div>
+        <div class="cds--body-01" style="color:var(--cds-text-secondary)">Risk 0.78 · API 581 · 480h downtime avoided</div>
+        <div class="btn-row"><button class="cds--btn cds--btn--ghost">▶ Run Pipeline</button></div>
+      </div>
+    </div>
+    <!-- Live pipeline log output -->
+    <div class="cds--tile" style="margin-top:var(--spacing-05)">
+      <div class="tile-label" style="margin-bottom:var(--spacing-03)">Pipeline Execution Log</div>
+      <div class="agent-log" id="demo-log" style="height:320px">
+        <div class="log-line"><span class="log-agent tool">SYSTEM</span><span class="log-msg">Ready. Click a scenario card above to start the pipeline.</span></div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+/* ── Global Chart.js defaults (Carbon G100) ──────────────────────────────── */
+Chart.defaults.color = '#c6c6c6';
+Chart.defaults.borderColor = '#393939';
+Chart.defaults.font.family = "'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif";
+Chart.defaults.font.size = 12;
+
+const CDS = {
+  blue:    '#4589ff',
+  green:   '#42be65',
+  red:     '#fa4d56',
+  yellow:  '#f1c21b',
+  orange:  '#ff832b',
+  purple:  '#be95ff',
+  teal:    '#3ddbd9',
+  layer1:  '#262626',
+  layer2:  '#393939',
+  border:  '#525252',
+  text:    '#c6c6c6',
+};
+
+/* ── Clock ─────────────────────────────────────────────────────────────── */
+function updateClock() {
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString();
+}
+updateClock(); setInterval(updateClock, 1000);
+
+/* ── Tab navigation ──────────────────────────────────────────────────────── */
+function showTab(id, el) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  if (el) el.classList.add('active');
+}
+
+/* ── Animated progress bars ──────────────────────────────────────────────── */
+function animateBars() {
+  const bars = [
+    ['fp-roi',100],['fp-savings',88],['fp-wf',60],['fp-ftf',87.5],
+    ['pb-roi',99],['pb-pm',69.6],['pb-wrench',69],['pb-backlog',41.4],['pb-ftf2',87.5],
+  ];
+  setTimeout(() => {
+    bars.forEach(([id, pct]) => {
+      const el = document.getElementById(id);
+      if (el) el.style.width = Math.min(pct, 100) + '%';
+    });
+  }, 400);
+}
+
+/* ── Sparklines for health cards ─────────────────────────────────────────── */
+function drawSparkline(id, values, color) {
+  const canvas = document.getElementById(id);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.offsetWidth || 120;
+  canvas.height = 28;
+  const w = canvas.width, h = canvas.height;
+  const min = Math.min(...values), max = Math.max(...values);
+  const range = max - min || 1;
+  ctx.clearRect(0, 0, w, h);
+  ctx.beginPath();
+  values.forEach((v, i) => {
+    const x = (i / (values.length - 1)) * w;
+    const y = h - ((v - min) / range) * (h - 4) - 2;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  // Fill
+  ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.closePath();
+  ctx.fillStyle = color.replace(')', ',0.15)').replace('rgb', 'rgba').replace('#','rgba(').replace(/,0\.15\)$/,',0.15)');
+  try { ctx.fill(); } catch(e) {}
+}
+
+function generateSparkData(base, trend, n=20) {
+  const d = []; let v = base;
+  for (let i=0;i<n;i++) { v += (Math.random()-0.5)*base*0.08 + trend*base*0.02; d.push(Math.max(0,v)); }
+  return d;
+}
+
+function initSparklines() {
+  drawSparkline('sp-P101', generateSparkData(2.1,1,20).map((v,i)=>v*(1+i*0.12)), '#fa4d56');
+  drawSparkline('sp-K201', generateSparkData(105,1,20).map((v,i)=>v+i*1.1), '#fa4d56');
+  drawSparkline('sp-E401', generateSparkData(348,1,20).map((v,i)=>v+i*1.3), '#f1c21b');
+  drawSparkline('sp-R301', generateSparkData(0.85,1,20).map((v,i)=>v+i*0.027), '#f1c21b');
+  drawSparkline('sp-PSV501', generateSparkData(78.5,0,20), '#ff832b');
+  drawSparkline('sp-T601', generateSparkData(355,0,20), '#ff832b');
+  drawSparkline('sp-P102', generateSparkData(2.1,0,20), '#42be65');
+  drawSparkline('sp-P103', generateSparkData(1.9,0,20), '#42be65');
+  drawSparkline('sp-K202', generateSparkData(105,0,20), '#42be65');
+  drawSparkline('sp-E402', generateSparkData(0.42,0,20), '#42be65');
+}
+
+/* ── Charts ──────────────────────────────────────────────────────────────── */
+function initCharts() {
+  // Severity donut
+  new Chart(document.getElementById('chart-severity'), {
+    type: 'doughnut',
+    data: {
+      labels: ['CRITICAL','EMERGENCY','HIGH','MEDIUM','LOW'],
+      datasets: [{
+        data: [1,1,2,3,3],
+        backgroundColor: [CDS.red,'#c62828',CDS.orange,CDS.yellow,CDS.green],
+        borderColor: CDS.layer1, borderWidth: 2, hoverOffset: 6,
+      }]
+    },
+    options: { responsive:true, maintainAspectRatio:false, cutout:'65%',
+      plugins:{ legend:{ position:'right', labels:{ color:CDS.text, boxWidth:12, padding:12 }}}}
+  });
+
+  // Workflow states donut
+  new Chart(document.getElementById('chart-workflow-states'), {
+    type: 'doughnut',
+    data: {
+      labels: ['ROI_CALCULATED','EXECUTED','APPROVED','PENDING_APPROVAL','DRAFT'],
+      datasets: [{
+        data: [6,2,1,2,1],
+        backgroundColor: [CDS.green,CDS.blue,CDS.teal,CDS.yellow,CDS.border],
+        borderColor: CDS.layer1, borderWidth: 2, hoverOffset: 6,
+      }]
+    },
+    options: { responsive:true, maintainAspectRatio:false, cutout:'60%',
+      plugins:{ legend:{ position:'right', labels:{ color:CDS.text, boxWidth:12, padding:12 }}}}
+  });
+
+  // Monthly cost bar+line
+  const months = ['Oct','Nov','Dec','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep'];
+  const avoided = [2.1,3.4,1.8,4.2,2.9,5.1,3.6,4.8,6.2,5.5,7.8,8.9].map(x=>x*1e6);
+  const maintCost = [0.18,0.22,0.15,0.25,0.19,0.31,0.21,0.28,0.35,0.33,0.42,0.51].map(x=>x*1e6);
+  let cum = 0;
+  const cumSavings = avoided.map((a,i)=>{ cum+=a-maintCost[i]; return cum; });
+  new Chart(document.getElementById('chart-monthly-cost'), {
+    type: 'bar',
+    data: {
+      labels: months,
+      datasets: [
+        { label:'Avoided Downtime Cost', data: avoided, backgroundColor:'rgba(66,190,101,0.7)', borderColor:CDS.green, borderWidth:1, yAxisID:'y' },
+        { label:'Maintenance Cost', data: maintCost, backgroundColor:'rgba(69,137,255,0.7)', borderColor:CDS.blue, borderWidth:1, yAxisID:'y' },
+        { label:'Cumulative Savings', data: cumSavings, type:'line', borderColor:CDS.yellow, borderWidth:2, pointRadius:3, fill:false, tension:0.4, yAxisID:'y2' },
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      scales:{
+        y:{ position:'left', ticks:{ callback:v=>'$'+(v/1e6).toFixed(1)+'M', color:CDS.text }, grid:{ color:CDS.border }},
+        y2:{ position:'right', ticks:{ callback:v=>'$'+(v/1e6).toFixed(0)+'M', color:CDS.yellow }, grid:{ display:false }},
+        x:{ ticks:{ color:CDS.text }, grid:{ color:CDS.border }},
+      },
+      plugins:{ legend:{ labels:{ color:CDS.text, boxWidth:12 }}}
+    }
+  });
+
+  // ROI gauge (half-donut)
+  new Chart(document.getElementById('chart-roi-gauge'), {
+    type: 'doughnut',
+    data: {
+      datasets: [{
+        data: [99, 1],
+        backgroundColor: [CDS.green, CDS.border],
+        borderWidth: 0, circumference:180, rotation:270,
+      }]
+    },
+    options: { responsive:false, cutout:'75%', plugins:{ legend:{display:false}, tooltip:{enabled:false}}}
+  });
+
+  // Maintenance type pie
+  new Chart(document.getElementById('chart-maint-type'), {
+    type: 'pie',
+    data: {
+      labels: ['AI-Predicted (PdM)','Reactive (CM)','Scheduled (PM)'],
+      datasets: [{ data:[62,15,23], backgroundColor:[CDS.blue,CDS.red,CDS.green], borderColor:CDS.layer1, borderWidth:2 }]
+    },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom', labels:{ color:CDS.text, boxWidth:12, padding:8 }}}}
+  });
+
+  // Cumulative savings line
+  new Chart(document.getElementById('chart-cumulative'), {
+    type: 'line',
+    data: {
+      labels: months,
+      datasets: [{
+        label:'Cumulative Net Savings',
+        data: cumSavings,
+        borderColor: CDS.blue, backgroundColor:'rgba(69,137,255,0.12)',
+        borderWidth:2, fill:true, tension:0.4, pointRadius:4,
+        pointBackgroundColor:CDS.blue,
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      scales:{
+        y:{ ticks:{ callback:v=>'$'+(v/1e6).toFixed(0)+'M', color:CDS.text }, grid:{ color:CDS.border }},
+        x:{ ticks:{ color:CDS.text }, grid:{ color:CDS.border }},
+      },
+      plugins:{ legend:{ labels:{ color:CDS.text }}}
+    }
+  });
+
+  // MTBF comparison
+  const eqLabels = ['P-101','P-102','K-201','R-301','E-401','PSV-501','T-601','P-103'];
+  const baselineMTBF = [8760,9500,7000,43800,35000,26280,87600,10500];
+  const aiMTBF = baselineMTBF.map(v=>Math.round(v*1.22));
+  new Chart(document.getElementById('chart-mtbf'), {
+    type: 'bar',
+    data: {
+      labels: eqLabels,
+      datasets: [
+        { label:'Baseline MTBF (h)', data:baselineMTBF, backgroundColor:'rgba(250,77,86,0.7)', borderColor:CDS.red, borderWidth:1 },
+        { label:'AI-Assisted MTBF (h)', data:aiMTBF, backgroundColor:'rgba(66,190,101,0.7)', borderColor:CDS.green, borderWidth:1 },
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      scales:{ y:{ ticks:{ color:CDS.text }, grid:{ color:CDS.border }}, x:{ ticks:{ color:CDS.text }, grid:{ color:CDS.border }}},
+      plugins:{ legend:{ labels:{ color:CDS.text, boxWidth:12 }}}
+    }
+  });
+
+  // WO Volume
+  new Chart(document.getElementById('chart-wo-volume'), {
+    type: 'bar',
+    data: {
+      labels: months,
+      datasets: [
+        { label:'PdM', data:[3,4,2,5,3,6,4,5,7,6,8,9], backgroundColor:'rgba(69,137,255,0.8)', borderWidth:0 },
+        { label:'CM', data:[2,1,2,1,1,0,1,1,0,1,0,0], backgroundColor:'rgba(250,77,86,0.8)', borderWidth:0 },
+        { label:'Statutory', data:[1,1,0,1,1,1,1,0,1,1,1,2], backgroundColor:'rgba(255,131,43,0.8)', borderWidth:0 },
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      scales:{ y:{ stacked:true, ticks:{ color:CDS.text }, grid:{ color:CDS.border }}, x:{ stacked:true, ticks:{ color:CDS.text }, grid:{ color:CDS.border }}},
+      plugins:{ legend:{ labels:{ color:CDS.text, boxWidth:12 }}}
+    }
+  });
+
+  // Tool call frequency
+  const tools = ['sensor_data_fetcher','equipment_history_lookup','parts_inventory_checker','safety_procedure_retriever','cost_estimator','notification_sender','request_permit_to_work'];
+  const calls  = [12,12,12,12,12,24,12];
+  new Chart(document.getElementById('chart-tool-freq'), {
+    type: 'bar',
+    data: {
+      labels: tools,
+      datasets: [{ label:'Calls', data:calls, backgroundColor:CDS.blue, borderWidth:0 }]
+    },
+    options:{
+      indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      scales:{ x:{ ticks:{ color:CDS.text }, grid:{ color:CDS.border }}, y:{ ticks:{ color:CDS.text, font:{family:'IBM Plex Mono',size:11}}, grid:{ color:CDS.border }}},
+      plugins:{ legend:{ display:false }}
+    }
+  });
+
+  // LLM tokens
+  const scenarios=['P-101 Bearing','K-201 Valve','R-301 Fouling','E-401 Leak','PSV-501','T-601 CUI'];
+  new Chart(document.getElementById('chart-llm-tokens'), {
+    type: 'bar',
+    data: {
+      labels: scenarios,
+      datasets: [{ label:'Tokens', data:[1240,1380,1190,1310,980,1050], backgroundColor:CDS.purple, borderWidth:0 }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      scales:{ y:{ ticks:{ color:CDS.text }, grid:{ color:CDS.border }}, x:{ ticks:{ color:CDS.text, font:{size:10}}, grid:{ color:CDS.border }}},
+      plugins:{ legend:{ display:false }}
+    }
+  });
+
+  // Approval time
+  new Chart(document.getElementById('chart-approval-time'), {
+    type: 'bar',
+    data: {
+      labels: scenarios,
+      datasets: [{ label:'Minutes to Approve', data:[1.5,2.1,3.4,1.8,4.2,2.9], backgroundColor:CDS.teal, borderWidth:0 }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      scales:{ y:{ ticks:{ color:CDS.text }, grid:{ color:CDS.border }}, x:{ ticks:{ color:CDS.text, font:{size:10}}, grid:{ color:CDS.border }}},
+      plugins:{ legend:{ display:false }}
+    }
+  });
+
+  // Agent invocations
+  const agents=['Orchestrator','Diagnostics','Criticality','Compliance','WorkOrder','ROI'];
+  new Chart(document.getElementById('chart-agent-inv'), {
+    type: 'radar',
+    data: {
+      labels: agents,
+      datasets: [{ label:'Invocations per Pipeline', data:[18,18,18,18,18,18],
+        borderColor:CDS.blue, backgroundColor:'rgba(69,137,255,0.15)',
+        pointBackgroundColor:CDS.blue, borderWidth:2 }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      scales:{ r:{ ticks:{ color:CDS.text, backdropColor:'transparent' }, grid:{ color:CDS.border }, angleLines:{ color:CDS.border }, pointLabels:{ color:CDS.text, font:{size:11} }}},
+      plugins:{ legend:{ labels:{ color:CDS.text }}}
+    }
+  });
+
+  // Compliance
+  new Chart(document.getElementById('chart-compliance'), {
+    type: 'bar',
+    data: {
+      labels: ['PSV-501','T-601','PSV-502','E-402','P-101','K-201','R-301','E-401'],
+      datasets: [
+        { label:'Days Since Inspection', data:[372,756,185,360,180,310,210,190], backgroundColor:[CDS.red,CDS.orange,CDS.green,CDS.green,CDS.green,CDS.green,CDS.green,CDS.green], borderWidth:0 },
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      scales:{ y:{ ticks:{ color:CDS.text }, grid:{ color:CDS.border }}, x:{ ticks:{ color:CDS.text }, grid:{ color:CDS.border }}},
+      plugins:{ legend:{ display:false }}
+    }
+  });
+}
+
+/* ── Pipeline stage visual ───────────────────────────────────────────────── */
+function initPipeline() {
+  const stages = [
+    {icon:'🔔',label:'Alert\nDetected',state:'done'},
+    {icon:'🔬',label:'Diagnosis',state:'done'},
+    {icon:'📋',label:'FMEA\nScoring',state:'done'},
+    {icon:'✅',label:'Compliance\nCheck',state:'done'},
+    {icon:'📝',label:'Work Order\nGenerated',state:'done'},
+    {icon:'💰',label:'ROI\nCalc',state:'done'},
+    {icon:'⏳',label:'Human\nApproval',state:'active'},
+    {icon:'✔',label:'Approved',state:'pending'},
+    {icon:'🔧',label:'Executed',state:'pending'},
+    {icon:'📊',label:'ROI\nLogged',state:'pending'},
+  ];
+  const container = document.getElementById('pipeline-stages');
+  stages.forEach(s => {
+    const div = document.createElement('div');
+    div.className = 'pipeline-stage';
+    div.innerHTML = `<div class="pipeline-node ${s.state}">${s.icon}</div><div class="pipeline-label">${s.label.replace('\n','<br>')}</div>`;
+    container.appendChild(div);
+  });
+}
+
+/* ── WO Table ────────────────────────────────────────────────────────────── */
+function initWOTable() {
+  const rows = [
+    {wf:'WF-20260911-62055745',eq:'P-101',sc:'bearing_vibration_anomaly',pri:'URGENT',state:'ROI_CALCULATED',savings:'$1,194,590',roi:'54,054%'},
+    {wf:'WF-20260911-5CB15E30',eq:'R-301',sc:'reactor_fouling',pri:'HIGH',state:'ROI_CALCULATED',savings:'$5,032,760',roi:'2,476%'},
+    {wf:'WF-20260911-0DAA27FB',eq:'E-401',sc:'heat_exchanger_tube_leak',pri:'HIGH',state:'ROI_CALCULATED',savings:'$1,638,225',roi:'22,213%'},
+    {wf:'WF-20260911-4E05BD9E',eq:'K-201',sc:'compressor_valve_failure',pri:'EMERGENCY',state:'ROI_CALCULATED',savings:'$2,680,280',roi:'21,408%'},
+    {wf:'WF-20260911-14F7C9C6',eq:'PSV-501',sc:'safety_valve_overdue',pri:'HIGH',state:'ROI_CALCULATED',savings:'$445,615',roi:'13,991%'},
+    {wf:'WF-20260911-0DCBA19C',eq:'T-601',sc:'cui_risk',pri:'MEDIUM',state:'ROI_CALCULATED',savings:'$8,944,880',roi:'28,743%'},
+  ];
+  const tagClass = {EMERGENCY:'cds--tag--red',URGENT:'cds--tag--red',HIGH:'cds--tag--yellow',MEDIUM:'cds--tag--blue',LOW:'cds--tag--gray'};
+  const tbody = document.getElementById('wo-table-body');
+  rows.forEach(r => {
+    tbody.innerHTML += `<tr>
+      <td><span class="mono" style="color:var(--cds-link-primary)">${r.wf.slice(-8)}</span></td>
+      <td><strong>${r.eq}</strong></td>
+      <td style="font-size:12px;color:var(--cds-text-helper)">${r.sc.replace(/_/g,' ')}</td>
+      <td><span class="cds--tag ${tagClass[r.pri]||'cds--tag--gray'}">${r.pri}</span></td>
+      <td><span class="cds--tag cds--tag--green">✓ ${r.state}</span></td>
+      <td style="color:var(--cds-support-success);font-weight:600">${r.savings}</td>
+      <td style="color:var(--cds-support-success)">${r.roi}</td>
+    </tr>`;
+  });
+}
+
+/* ── Agent log ───────────────────────────────────────────────────────────── */
+const LOG_ENTRIES = [
+  {t:'13:23:01',a:'Orchestrator',cls:'orchestrator',m:'Pipeline started for P-101 | scenario: bearing_vibration_anomaly'},
+  {t:'13:23:01',a:'TOOL:sensor_data_fetcher',cls:'tool',m:'Retrieved 48 samples for P-101 | anomaly injected'},
+  {t:'13:23:02',a:'TOOL:equipment_history_lookup',cls:'tool',m:'Found 7 history records | MTBF=4380h'},
+  {t:'13:23:03',a:'PredictiveDiagnostics',cls:'diagnostics',m:'Bearing Failure detected | TTF=48h | anomalies=2'},
+  {t:'13:23:04',a:'CriticalityAssessment',cls:'criticality',m:'FMEA RPN=84 | Severity=7 × Occ=6 × Det=2 | MEDIUM'},
+  {t:'13:23:05',a:'ComplianceAgent',cls:'compliance',m:'Status: COMPLIANT | 0 violations | Rules checked: 2'},
+  {t:'13:23:05',a:'TOOL:parts_inventory_checker',cls:'tool',m:'SKF-6315-C3: IN STOCK | SKF-6316-C3: IN STOCK | Total $690'},
+  {t:'13:23:06',a:'WorkOrderGeneration',cls:'workorder',m:'Priority=URGENT | Cost=$1,450 | Parts=3 | Crew=3'},
+  {t:'13:23:07',a:'ROICalculation',cls:'roi',m:'Avoided=$1,196,800 | MaintCost=$2,210 | NetSavings=$1,194,590 | ROI=54054%'},
+  {t:'13:23:08',a:'TOOL:notification_sender',cls:'tool',m:'URGENT email dispatched to supervisor@plant | wo=WO-20260911-8BC5C3'},
+  {t:'13:23:08',a:'Orchestrator',cls:'orchestrator',m:'State: PENDING_HUMAN_APPROVAL | Deadline: +30min'},
+  {t:'13:23:10',a:'Orchestrator',cls:'orchestrator',m:'APPROVED by AutoApproval-Demo | State → SCHEDULED'},
+  {t:'13:23:11',a:'TOOL:request_permit_to_work',cls:'tool',m:'PTW issued: PTW-20260911-ABCDEF | Mechanical Isolation'},
+  {t:'13:23:11',a:'Orchestrator',cls:'orchestrator',m:'State: EXECUTED → CLOSED → ROI_CALCULATED ✓'},
+];
+
+function populateAgentLog() {
+  const log = document.getElementById('agent-log');
+  LOG_ENTRIES.forEach(e => {
+    log.innerHTML += `<div class="log-line">
+      <span class="log-time">${e.t}</span>
+      <span class="log-agent ${e.cls}">[${e.a}]</span>
+      <span class="log-msg">${e.m}</span>
+    </div>`;
+  });
+  log.scrollTop = log.scrollHeight;
+}
+
+/* ── Demo scenario playback ──────────────────────────────────────────────── */
+const SCENARIO_STEPS = {
+  bearing: [
+    ['PIPELINE_START','🚀 Starting Agentic Pipeline | Equipment: P-101 | Scenario: bearing_vibration_anomaly'],
+    ['WORKFLOW','📋 Workflow created | State: ALERT_DETECTED'],
+    ['SCADA','📡 [TOOL] sensor_data_fetcher(P-101) → 48 samples | VIB_NDE=8.4mm/s ALERT'],
+    ['CMMS','📚 [TOOL] equipment_history_lookup(P-101) → 7 records | MTBF=4380h'],
+    ['LLM','🧠 [LLM] Generating diagnostic narrative... (Mock GPT-4o)'],
+    ['DIAG','🔍 [PredictiveDiagnosticsAgent] Failure Mode: Bearing Failure | TTF: 48h | Anomalies: 2'],
+    ['FMEA','⚠️  [CriticalityAssessmentAgent] RPN=84 | S=7 × O=6 × D=2 | Criticality: MEDIUM'],
+    ['COMP','✅ [ComplianceAgent] Status: COMPLIANT | 0 violations | Rules: OSHA 1910.147, API RP 505'],
+    ['INV','📦 [TOOL] parts_inventory_checker → SKF-6315-C3: ✓ IN STOCK | SKF-6316-C3: ✓ IN STOCK | $690'],
+    ['SAFE','🦺 [TOOL] safety_procedure_retriever(PUMP, Flammable) → PTW: Mechanical Isolation + LOTO'],
+    ['COST','💲 [TOOL] cost_estimator → Labor=$760 | Parts=$690 | Total=$1,450'],
+    ['WO','📝 [WorkOrderGenerationAgent] Priority: URGENT | WO: URGENT — Bearing Replacement P-101'],
+    ['ROI','💰 [ROICalculationAgent] Avoided=$1,196,800 | Cost=$2,210 | Net Savings=$1,194,590 | ROI=54,054%'],
+    ['CMMS2','💾 [CMMS] Work order saved | ID: WO-20260911-DEMO01 | Status: DRAFT'],
+    ['NOTIF','📨 [notification_sender] URGENT email+SMS → supervisor@plant.example.com'],
+    ['APPROVAL','⏳ [APPROVAL] Work order WO-20260911-DEMO01 awaiting supervisor approval (30 min window)...'],
+    ['APPROVED','✅ Decision: APPROVED | Approver: Demo-Supervisor | State: APPROVED → SCHEDULED'],
+    ['EXEC','🔧 Field team executing work order... Bearing P-101 NDE replaced'],
+    ['PTW','📄 [PTW] PTW-20260911-DEMOAB issued | Mechanical Isolation | Valid 12h'],
+    ['VALID','📡 Post-maintenance sensor validation: VIB_NDE=2.3mm/s ✓ NORMAL | Bearing temp=73°C ✓'],
+    ['CLOSE','🏁 Work order CLOSED | Post-maintenance validation PASSED'],
+    ['ROI_FINAL','📊 ROI_CALCULATED | Net Savings: $1,194,590 | ROI: 54,054% | Dashboard updated'],
+    ['DONE','✨ Pipeline complete in ~5s | All 18 stages traversed successfully'],
+  ],
+  compressor: [
+    ['START','🚨 CRITICAL ALERT: K-201 Stage-1 discharge temperature 128°C (+28°C above baseline)'],
+    ['SCADA','📡 [TOOL] sensor_data_fetcher(K-201) → discharge_temp=128°C | efficiency=0.71 | valve_temp=135°C'],
+    ['DIAG','🔍 [PredictiveDiagnosticsAgent] Discharge Valve Failure | TTF: 24h | RPN=126 | HIGH'],
+    ['COMP','⚠️  [ComplianceAgent] COMPLIANT | Gas Release PTW required | Hot work restricted'],
+    ['INV','📦 [TOOL] suction_valve: ✓ IN STOCK | discharge_valve: ⚠ BACKORDER (21 days) | gasket: ✓'],
+    ['WO','📝 [WorkOrderGenerationAgent] Priority: EMERGENCY | De-rate K-201 to 70% immediately'],
+    ['ROI','💰 Net Savings: $2,680,280 | ROI: 21,408% | Avoided 144h emergency downtime'],
+    ['APPROVAL','✅ APPROVED | Emergency expedite — discharge valve sourced from regional stock'],
+    ['DONE','🔧 K-201 valve replaced | Load transferred back from K-202 | Pipeline complete'],
+  ],
+  reactor: [
+    ['START','⚠️  PROCESS ALERT: R-301 ΔP = 1.38 bar (+58% above baseline). Catalyst fouling.'],
+    ['SCADA','📡 [TOOL] sensor_data_fetcher(R-301) → dp_across_bed=1.38 bar | outlet_temp=309°C↓'],
+    ['DIAG','🔍 Catalyst Fouling confirmed | TTF: 336h | Progressive coke deposition pattern'],
+    ['ROI','💰 Net Savings: $5,032,760 | ROI: 2,476% | Avoided 280h unplanned shutdown'],
+    ['DONE','📋 Catalyst regeneration scheduled for next turnaround window | Pipeline complete'],
+  ],
+  hx: [
+    ['START','⚠️  E-401 tube-side outlet 374°C — exceeds design cross temperature. Tube leak.'],
+    ['SCADA','📡 Shell ΔP +24% | tube_outlet_temp=374°C vs design 348°C | leakage confirmed'],
+    ['DIAG','🔍 Tube Bundle Tube Leak | TTF: 96h | Online plugging required (≤10%)'],
+    ['ROI','💰 Net Savings: $1,638,225 | ROI: 22,213%'],
+    ['DONE','🔧 E-401 tube plugging complete | Full bundle replacement scheduled for turnaround'],
+  ],
+  psv: [
+    ['START','⚠️  COMPLIANCE: PSV-501 inspection overdue 7 days — OSHA 1910.119 violation'],
+    ['COMP','🔐 [ComplianceAgent] NON_COMPLIANT | Violations: 2 | AHJ notification REQUIRED'],
+    ['REG','📋 Regulatory notification raised → OSHA 1910.119 / Local AHJ | body: API 510'],
+    ['ROI','💰 Net Savings: $445,615 | Regulatory penalty avoided | Compliance restored'],
+    ['DONE','✅ PSV-501 inspected and tested | Certificate issued | AHJ notified | Pipeline complete'],
+  ],
+  cui: [
+    ['START','⚠️  T-601 CUI inspection 26 days overdue | Risk Score 0.78 (HIGH) | API 581'],
+    ['COMP','🔐 [ComplianceAgent] NON_COMPLIANT | API 581 violation | CUI survey required'],
+    ['ROI','💰 Net Savings: $8,944,880 | Catastrophic brittle fracture avoided (480h equiv)'],
+    ['DONE','📡 T-601 CUI survey completed | Shell zones A4-A7 inspected | Results logged to RBI system'],
+  ],
+};
+
+function triggerScenario(sc) {
+  showTab('demo', document.querySelector('[onclick="showTab(\'demo\',this)"]'));
+  runDemoByKey(sc);
+}
+
+function runDemo(short) {
+  const map = {bearing:'bearing_vibration_anomaly',compressor:'compressor_valve_failure',reactor:'reactor_fouling',hx:'heat_exchanger_tube_leak',psv:'safety_valve_overdue',cui:'cui_risk'};
+  runDemoByKey(map[short]||short);
+}
+
+function runDemoByKey(key) {
+  const shortKey = key.replace('_vibration_anomaly','').replace('_fouling','').replace('_tube_leak','').replace('_valve_failure','').replace('_overdue','').replace('_risk','');
+  const steps = SCENARIO_STEPS[shortKey] || SCENARIO_STEPS[key] ||
+    SCENARIO_STEPS[Object.keys(SCENARIO_STEPS).find(k=>key.includes(k))] || [];
+  const log = document.getElementById('demo-log');
+  log.innerHTML = '';
+  let i = 0;
+  function next() {
+    if (i >= steps.length) return;
+    const [tag, msg] = steps[i++];
+    const color = tag==='DONE'?'var(--cds-support-success)':tag.includes('ALERT')||tag==='START'?'var(--cds-support-error)':'var(--cds-text-secondary)';
+    const now = new Date().toLocaleTimeString();
+    log.innerHTML += `<div class="log-line"><span class="log-time">${now}</span><span class="log-agent tool">[${tag}]</span><span class="log-msg" style="color:${color}">${msg}</span></div>`;
+    log.scrollTop = log.scrollHeight;
+    setTimeout(next, 280);
+  }
+  next();
+}
+
+/* ── Init ─────────────────────────────────────────────────────────────────── */
+window.addEventListener('DOMContentLoaded', () => {
+  initSparklines();
+  initCharts();
+  initPipeline();
+  initWOTable();
+  populateAgentLog();
+  animateBars();
+});
+
+// Auto-refresh sparklines with live-looking animation
+setInterval(() => {
+  ['sp-P101','sp-K201'].forEach(id => {
+    const canvas = document.getElementById(id);
+    if (!canvas) return;
+    const color = id==='sp-P101'?'#fa4d56':'#fa4d56';
+    drawSparkline(id, generateSparkData(id==='sp-P101'?8.4:128, 0.1, 20), color);
+  });
+}, 3000);
+</script>
+</body>
+</html>

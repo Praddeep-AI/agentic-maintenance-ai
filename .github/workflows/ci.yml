@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test:
+    name: 62 Tests · Python 3.11
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install
+        run: pip install -r requirements.txt pytest
+
+      - name: Test
+        run: python -m pytest tests/ -v --tb=short
+        env:
+          PYTHONPATH: .
+          PYTHONIOENCODING: utf-8
+
+  smoke:
+    name: Pipeline smoke test
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install
+        run: pip install -r requirements.txt
+
+      - name: Smoke
+        run: |
+          python - <<'EOF'
+          import sys; sys.path.insert(0, ".")
+          from agents.orchestrator import MaintenanceOrchestrator
+          from roi.roi_engine import calculate_cumulative_roi
+          from enterprise_systems.scada_simulator import get_sensor_data
+          assert "summary" in calculate_cumulative_roi()
+          assert "channels" in get_sensor_data("P-101", time_range_hours=6)
+          o = MaintenanceOrchestrator(offline_mode=True)
+          r = o.run_pipeline("P-101","bearing 8.4mm/s","bearing_vibration_anomaly",
+                             auto_approve=True,prefill_decision="APPROVED")
+          assert r.get("final_state") == "ROI_CALCULATED", r
+          print("PASSED:", r["outcome"], r["final_state"])
+          EOF
+        env:
+          PYTHONPATH: .
+          PYTHONIOENCODING: utf-8

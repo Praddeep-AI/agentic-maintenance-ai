@@ -1,0 +1,55 @@
+version: "3.9"
+
+services:
+  # ─── Executive Dashboard ─────────────────────────────────────────────────
+  dashboard:
+    build:
+      context: ..
+      dockerfile: agentic_maintenance/Dockerfile
+    container_name: agentic-maintenance-dashboard
+    command: >
+      streamlit run agentic_maintenance/dashboard/app.py
+        --server.address 0.0.0.0
+        --server.port 8501
+        --server.headless true
+        --browser.gatherUsageStats false
+    ports:
+      - "8501:8501"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-offline}
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./agentic_maintenance.db:/app/agentic_maintenance.db
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # ─── Demo Runner (one-shot) ───────────────────────────────────────────────
+  demo:
+    build:
+      context: ..
+      dockerfile: agentic_maintenance/Dockerfile
+    container_name: agentic-maintenance-demo
+    command: >
+      python -m agentic_maintenance.demo_runner --scenario bearing_vibration_anomaly
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-offline}
+      - PYTHONUNBUFFERED=1
+    profiles:
+      - demo
+
+  # ─── Test Runner (one-shot) ───────────────────────────────────────────────
+  tests:
+    build:
+      context: ..
+      dockerfile: agentic_maintenance/Dockerfile
+    container_name: agentic-maintenance-tests
+    command: >
+      pytest agentic_maintenance/tests/ -v --cov=agentic_maintenance --cov-report=term-missing
+    environment:
+      - PYTHONUNBUFFERED=1
+    profiles:
+      - test

@@ -1,0 +1,130 @@
+# ============================================================
+# Agentic Maintenance System — Configuration
+# ============================================================
+
+system:
+  name: "Agentic Maintenance AI"
+  version: "1.0.0"
+  offline_mode: true          # Use mock LLM when true (no OpenAI calls)
+  log_level: "INFO"           # DEBUG | INFO | WARNING | ERROR
+  log_format: "json"          # json | text
+  db_path: "agentic_maintenance.db"   # SQLite database path
+
+llm:
+  provider: "openai"          # openai | mock
+  model: "gpt-4o"
+  temperature: 0.2
+  max_tokens: 2048
+  api_key_env: "OPENAI_API_KEY"
+
+# Production rates and financial parameters
+financials:
+  production_rate_usd_per_hour: 85000    # USD/hour lost when plant offline
+  product_margin_pct: 0.22               # 22% margin on production value
+  ai_system_annual_cost_usd: 250000      # Total annual cost of AI system
+  labor_rate_usd_per_hour: 95            # Maintenance labor rate
+  contractor_rate_usd_per_hour: 145      # Contractor labor rate
+
+# Equipment criticality thresholds
+criticality:
+  fmea_score_critical: 200     # RPN >= 200 → Critical
+  fmea_score_high: 100         # RPN 100–199 → High
+  fmea_score_medium: 50        # RPN 50–99 → Medium
+  auto_escalate_critical: true
+
+# Sensor anomaly detection thresholds
+sensor_thresholds:
+  vibration_alert_mm_s: 7.1         # ISO 10816 Class III limit
+  vibration_critical_mm_s: 11.2
+  temperature_delta_pct: 0.15       # 15% above baseline → alert
+  pressure_drop_pct: 0.20           # 20% above baseline → alert
+  efficiency_loss_pct: 0.08         # 8% efficiency drop → alert
+  flow_deviation_pct: 0.12
+
+# Workflow / approval settings
+workflow:
+  approval_timeout_minutes: 30       # Auto-escalate after this time
+  escalation_recipient: "senior_engineer@plant.example.com"
+  auto_approve_low_risk: false
+  parallel_workflow_limit: 10        # Max concurrent active work orders
+
+# Notification settings
+notifications:
+  email_enabled: true
+  sms_enabled: true
+  recipients:
+    maintenance_supervisor:
+      - "supervisor@plant.example.com"
+    senior_engineer:
+      - "senior_engineer@plant.example.com"
+    management:
+      - "plant_manager@plant.example.com"
+  urgency_levels:
+    CRITICAL: ["email", "sms"]
+    HIGH: ["email"]
+    MEDIUM: ["email"]
+    LOW: []
+
+# Compliance / regulatory
+compliance:
+  psv_inspection_interval_days: 365
+  cui_inspection_interval_days: 730
+  osha_process_safety_enabled: true
+  epa_reporting_threshold_kg: 10.0   # kg of regulated substance released
+  regulatory_bodies: ["OSHA", "EPA", "API", "ASME"]
+
+# Simulation parameters (used when offline_mode=true)
+simulation:
+  random_seed: 42
+  historical_months: 12
+  equipment_count: 10
+  incident_frequency_per_month: 3    # avg incidents per month per scenario run
+  sensor_sample_interval_seconds: 30
+  anomaly_injection_stddev: 3.5      # σ multiplier for injected anomalies
+
+# Streamlit dashboard settings
+dashboard:
+  host: "0.0.0.0"
+  port: 8501
+  auto_refresh_seconds: 10
+  chart_theme: "plotly_dark"
+  max_log_entries_displayed: 200
+
+# Cost parameters by equipment type
+equipment_costs:
+  PUMP:
+    planned_maintenance_usd: 8500
+    emergency_repair_usd: 42000
+    replacement_usd: 120000
+    downtime_hours_planned: 8
+    downtime_hours_emergency: 72
+  COMPRESSOR:
+    planned_maintenance_usd: 22000
+    emergency_repair_usd: 185000
+    replacement_usd: 650000
+    downtime_hours_planned: 24
+    downtime_hours_emergency: 168
+  REACTOR:
+    planned_maintenance_usd: 45000
+    emergency_repair_usd: 380000
+    replacement_usd: 2500000
+    downtime_hours_planned: 48
+    downtime_hours_emergency: 336
+  HEAT_EXCHANGER:
+    planned_maintenance_usd: 15000
+    emergency_repair_usd: 95000
+    replacement_usd: 280000
+    downtime_hours_planned: 16
+    downtime_hours_emergency: 96
+  SAFETY_VALVE:
+    planned_maintenance_usd: 2500
+    emergency_repair_usd: 18000
+    replacement_usd: 45000
+    downtime_hours_planned: 4
+    downtime_hours_emergency: 24
+  DISTILLATION_COLUMN:
+    planned_maintenance_usd: 65000
+    emergency_repair_usd: 520000
+    replacement_usd: 4000000
+    downtime_hours_planned: 72
+    downtime_hours_emergency: 480
