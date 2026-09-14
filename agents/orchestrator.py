@@ -150,9 +150,11 @@ class MaintenanceOrchestrator:
             reasoning=f"Analyzed {len(diagnosis['anomalies_detected'])} anomalies. Failure mode: {diagnosis['failure_mode']}",
             decision=f"Predicted failure in {diagnosis.get('predicted_failure_hours', '?')}h. Mode: {diagnosis['failure_mode']}"
         )
+        ttf = diagnosis.get('predicted_failure_hours')
+        ttf_str = f"{ttf}h" if ttf is not None else "N/A"
         self._emit("DIAGNOSTICS_DONE",
                    f"   → Failure mode: {diagnosis['failure_mode']} | "
-                   f"TTF: {diagnosis.get('predicted_failure_hours', 'N/A')}h | "
+                   f"TTF: {ttf_str} | "
                    f"Anomalies: {diagnosis['anomaly_count']}")
         stages["diagnosis"] = diagnosis
 
@@ -165,6 +167,11 @@ class MaintenanceOrchestrator:
             detection_method="AI-Predictive",
             maintenance_history=history,
         )
+        # Merge criticality fields into diagnosis_result so the approval interface can display them
+        wf.diagnosis_result["risk_score"] = criticality["risk_score"]
+        wf.diagnosis_result["criticality"] = criticality["criticality"]
+        wf.diagnosis_result["fmea_rpn"] = criticality["fmea_rpn"]
+
         wf.log_agent_reasoning(
             "CriticalityAssessmentAgent",
             reasoning=criticality["reasoning"],
