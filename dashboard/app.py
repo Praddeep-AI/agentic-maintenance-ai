@@ -497,7 +497,7 @@ with T1:
                 "APPROVED":              "background:#0d2410;color:#6ee7b7",
                 "CLOSED":                "background:#082030;color:#60a5fa",
             }
-            st.dataframe(df_wf.style.applymap(lambda v: _ss.get(v, ""), subset=["State"]),
+            st.dataframe(df_wf.style.map(lambda v: _ss.get(v, ""), subset=["State"]),
                          use_container_width=True, height=260)
         else:
             st.info("No workflows yet — pick a scenario in the sidebar and click ▶ Run Pipeline")
@@ -684,7 +684,7 @@ with T3:
         } for n in notifs[-12:]])
         _uc = {"CRITICAL":"background:#da1e28;color:#fff","HIGH":"background:#ff832b;color:#fff",
                "MEDIUM":"background:#f1c21b;color:#000","LOW":"background:#24a148;color:#fff"}
-        st.dataframe(df_n.style.applymap(lambda v: _uc.get(v,""), subset=["Urgency"]),
+        st.dataframe(df_n.style.map(lambda v: _uc.get(v,""), subset=["Urgency"]),
                      use_container_width=True, height=210)
     else:
         st.info("No notifications sent yet.")
@@ -1206,7 +1206,7 @@ with T7:
         } for s in sched])
         _sc_map = {"OVERDUE":"background:#1c0000;color:#fca5a5",
                    "CURRENT":"background:#052e12;color:#4ade80"}
-        st.dataframe(df_sc.style.applymap(lambda v: _sc_map.get(v,""), subset=["Status"]),
+        st.dataframe(df_sc.style.map(lambda v: _sc_map.get(v,""), subset=["Status"]),
                      use_container_width=True, height=270)
 
     st.divider()
