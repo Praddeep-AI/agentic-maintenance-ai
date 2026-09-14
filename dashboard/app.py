@@ -68,7 +68,11 @@ st.markdown("""
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600;700&display=swap');
 html,body,[class*="css"]{font-family:'IBM Plex Sans',sans-serif;}
 .stApp{background:#07101f;}
-.block-container{padding-top:.8rem;padding-bottom:.5rem;}
+/* push content below Streamlit Cloud toolbar (44px) */
+.block-container{padding-top:3.2rem !important;padding-bottom:.5rem;}
+[data-testid="stToolbar"]{display:none !important;}
+[data-testid="stDecoration"]{display:none !important;}
+[data-testid="stStatusWidget"]{visibility:visible !important;}
 
 /* ── KPI strip ── */
 .krow{display:flex;gap:10px;margin-bottom:4px;}
@@ -76,8 +80,9 @@ html,body,[class*="css"]{font-family:'IBM Plex Sans',sans-serif;}
   flex:1;background:linear-gradient(140deg,#0d1a2e 0%,#102040 100%);
   border:1px solid #1c3352;border-radius:10px;padding:13px 15px;
   border-left:3px solid #0f62fe;position:relative;overflow:hidden;
-  cursor:default;
+  cursor:pointer;
 }
+.kcard[data-tab]:hover{transform:translateY(-2px);}
 .kcard:hover{border-color:#3b7de8;box-shadow:0 0 16px rgba(15,98,254,.18);}
 .kcard.g{border-left-color:#24a148;}
 .kcard.a{border-left-color:#f1c21b;}
@@ -273,12 +278,21 @@ def _tip(text: str) -> str:
     """Inline ℹ tooltip icon."""
     return f'<span class="tip" data-tip="{text}">i</span>'
 
-def kcard(label: str, value: str, delta: str, color: str, tooltip: str) -> str:
-    """KPI card with hover tooltip — no nested f-string quotes."""
+def kcard(label: str, value: str, delta: str, color: str, tooltip: str, tab: int = -1) -> str:
+    """KPI card with hover tooltip and optional tab-navigation click."""
     dc = "pos" if "+" in delta else "neg" if delta.startswith("-") or delta.startswith("−") else "neu"
     d_html = '<div class="kd ' + dc + '">' + delta + '</div>' if delta else ""
-    tt = '<div class="ktt">' + tooltip + '</div>'
-    return '<div class="kcard ' + color + '">' + tt + '<div class="kv">' + value + '</div><div class="kl">' + label + '</div>' + d_html + '</div>'
+    tt = '<div class="ktt">📌 Click to open source data<br><br>' + tooltip + '</div>'
+    nav = (' onclick="window.location.href=window.location.pathname+\'?tab=' + str(tab) + '\'"'
+           ' data-tab="' + str(tab) + '" title="Click to view source data"'
+           if tab >= 0 else "")
+    arrow = ('<div style="position:absolute;top:8px;right:10px;font-size:.6rem;color:#3b7de8">↗</div>'
+             if tab >= 0 else "")
+    return ('<div class="kcard ' + color + '"' + nav + '>'
+            + arrow + tt
+            + '<div class="kv">' + value + '</div>'
+            + '<div class="kl">' + label + '</div>'
+            + d_html + '</div>')
 
 def eqtile(eid: str, meta: dict) -> str:
     """Equipment health tile with hover tooltip."""
@@ -425,28 +439,50 @@ n_ftf  = kpis["first_time_fix_rate_pct"]
 n_wrench = kpis["wrench_time_improvement_pct"]
 
 _roi_disp = (f"{n_roi:.0f}%" if n_roi < 10000 else ">10,000%")
+# Tab indices: 0=Equipment Health, 1=Sensor Feed, 2=AI Activity, 3=Financial Impact, 4=FMEA, 5=ROI What-If, 6=Compliance
 kpi_row = "".join([
     kcard("Net Savings (12M)", f"${n_sav/1e6:.1f}M",  "+22% YoY", "g",
-          "Total net savings = Avoided downtime cost minus planned maintenance cost across all AI-assisted incidents in the last 12 months."),
+          "Total net savings = Avoided downtime cost minus planned maintenance cost across all AI-assisted incidents in the last 12 months.", tab=3),
     kcard("Cumulative ROI",    _roi_disp,               "vs $250K AI system", "b",
-          "ROI = (Total Net Savings / AI System Annual Cost) x 100. AI system annual cost: $250,000."),
+          "ROI = (Total Net Savings / AI System Annual Cost) x 100. AI system annual cost: $250,000.", tab=5),
     kcard("Avoided Downtime",  f"${n_down/1e6:.1f}M",  "+18% vs baseline", "g",
-          "Downtime hours avoided x $85,000/hr production rate x 22% product margin."),
+          "Downtime hours avoided x $85,000/hr production rate x 22% product margin.", tab=3),
     kcard("Active Workflows",  str(n_act),             "", "b",
-          "Workflows currently in progress — from ALERT_DETECTED to ROI_CALCULATED."),
+          "Workflows currently in progress — from ALERT_DETECTED to ROI_CALCULATED.", tab=0),
     kcard("Pending Approval",  str(n_pend),            "Requires action" if n_pend > 0 else "All clear",
           "a" if n_pend > 0 else "b",
-          "Work orders awaiting supervisor APPROVED/REJECTED decision before scheduling."),
-    kcard("Overdue Inspections", str(n_over),          f"−{n_over} compliance items" if n_over else "All current",
+          "Work orders awaiting supervisor APPROVED/REJECTED decision before scheduling.", tab=2),
+    kcard("Overdue Inspections", str(n_over),          f"\u2212{n_over} compliance items" if n_over else "All current",
           "r" if n_over else "g",
-          "Regulatory inspections past their due date. Non-compliance triggers OSHA/API/ASME notification requirements."),
+          "Regulatory inspections past their due date. Non-compliance triggers OSHA/API/ASME notification requirements.", tab=6),
     kcard("First-Time Fix Rate", f"{n_ftf:.1f}%",      "+15% vs baseline", "g",
-          "% of work orders completed without a repeat call-back within 30 days. AI-predicted maintenance achieves 88% vs 72% reactive."),
-    kcard("Wrench Time ↑",    f"{n_wrench:.1f}%",      "vs reactive baseline", "p",
-          "Improvement in hands-on productive maintenance time vs planning/travel overhead. AI reduces planning from ~5h to ~1.5h per job."),
+          "% of work orders completed without a repeat call-back within 30 days. AI-predicted maintenance achieves 88% vs 72% reactive.", tab=4),
+    kcard("Wrench Time \u2191",    f"{n_wrench:.1f}%",      "vs reactive baseline", "p",
+          "Improvement in hands-on productive maintenance time vs planning/travel overhead. AI reduces planning from ~5h to ~1.5h per job.", tab=5),
 ])
 st.markdown('<div class="krow">' + kpi_row + '</div>', unsafe_allow_html=True)
 st.divider()
+
+# ── auto-select tab from ?tab=N query param ───────────────────────────────────
+_tab_idx = 0
+try:
+    _qp = st.query_params.get("tab", "0")
+    _tab_idx = int(_qp) if str(_qp).isdigit() else 0
+except Exception:
+    _tab_idx = 0
+if _tab_idx > 0:
+    st.markdown(
+        "<script>"
+        "(function(){"
+        "function _go(){"
+        "var t=document.querySelectorAll('[data-testid=stTabs] [role=tab]');"
+        "if(t.length>" + str(_tab_idx) + "){t[" + str(_tab_idx) + "].click();}"
+        "else{setTimeout(_go,250);}}"
+        "setTimeout(_go,500);"
+        "})();"
+        "</script>",
+        unsafe_allow_html=True,
+    )
 
 # ── tabs ──────────────────────────────────────────────────────────────────────
 T1,T2,T3,T4,T5,T6,T7 = st.tabs([
