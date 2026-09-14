@@ -4,7 +4,12 @@ Run: streamlit run agentic_maintenance/dashboard/app.py
 """
 from __future__ import annotations
 import sys, pathlib
-sys.path.insert(0, str(pathlib.Path(__file__).parent.parent.parent))
+
+# Works on local (playground root 3 levels up) AND Streamlit Cloud (repo root 2 levels up)
+_here = pathlib.Path(__file__).resolve()
+for _p in [_here.parent.parent, _here.parent.parent.parent]:
+    if str(_p) not in sys.path:
+        sys.path.insert(0, str(_p))
 
 import time
 from datetime import datetime
